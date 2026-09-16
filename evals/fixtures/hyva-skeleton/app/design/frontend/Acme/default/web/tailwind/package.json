@@ -1,0 +1,1 @@
+{ "name": "acme-tailwind", "scripts": { "build-prod": "tailwindcss -i tailwind-source.css -o ../css/styles.css --minify" } }
