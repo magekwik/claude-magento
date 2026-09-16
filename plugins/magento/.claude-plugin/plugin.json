@@ -1,0 +1,11 @@
+{
+  "name": "magento",
+  "displayName": "Magento",
+  "version": "0.1.0",
+  "description": "Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magento:init) and Magento-aware code review (/magento:review).",
+  "author": { "name": "Magekwik", "url": "https://magekwik.com" },
+  "homepage": "https://github.com/magekwik/claude-magento",
+  "repository": "https://github.com/magekwik/claude-magento",
+  "license": "MIT",
+  "keywords": ["magento", "magento2", "adobe-commerce", "php", "ecommerce", "hyva", "luma"]
+}

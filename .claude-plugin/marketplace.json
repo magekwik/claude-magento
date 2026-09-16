@@ -1,0 +1,17 @@
+{
+  "$schema": "https://code.claude.com/schemas/marketplace.json",
+  "name": "magekwik",
+  "owner": { "name": "Magekwik", "url": "https://magekwik.com" },
+  "description": "Magekwik's Claude Code plugins for Magento.",
+  "plugins": [
+    {
+      "name": "magento",
+      "source": "./plugins/magento",
+      "description": "Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magento:init) and Magento-aware code review (/magento:review).",
+      "category": "development",
+      "author": { "name": "Magekwik", "url": "https://magekwik.com" },
+      "homepage": "https://github.com/magekwik/claude-magento",
+      "license": "MIT"
+    }
+  ]
+}
