@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -u
 T="$TRANSCRIPT"
-grep -q 'Save.php:12' "$T" || { echo "ObjectManager line (12) not reported"; exit 1; }
-grep -q 'Save.php:14' "$T" || { echo "raw SQL line (14) not reported"; exit 1; }
+grep -Eq '^\[(blocker|major|minor|nit)\] app/code/Acme/Catalog/Controller/Index/Save\.php:12 ' "$T" || { echo "ObjectManager line (12) not reported"; exit 1; }
+grep -Eq '^\[(blocker|major|minor|nit)\] app/code/Acme/Catalog/Controller/Index/Save\.php:14 ' "$T" || { echo "raw SQL line (14) not reported"; exit 1; }
 grep -Eqi 'ObjectManager' "$T" || { echo "ObjectManager not named"; exit 1; }
 grep -Eqi 'HttpPostActionInterface|CSRF' "$T" || { echo "CSRF/HttpPost issue not reported"; exit 1; }
 n=$(grep -Ec '^\[(blocker|major)\]' "$T")

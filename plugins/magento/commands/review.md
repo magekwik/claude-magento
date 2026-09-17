@@ -18,8 +18,9 @@ Arguments given: `$ARGUMENTS`
   - anything else → print `usage: /magento:review [branch|PR-number] [--comment]` and stop.
 - **local**: determine the base branch:
   `base=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')`; if empty, use `main` if `git show-ref --verify --quiet refs/heads/main` succeeds, else `master`.
-  Diff = output of `git diff "$base"...HEAD`, then `git diff --cached`, then `git diff`, concatenated. Touched files = union of `git diff --name-only "$base"...HEAD`, `git diff --cached --name-only`, `git diff --name-only`, and `git ls-files --others --exclude-standard` (for untracked files, include their full content in the diff section under a `+++ <path> (untracked)` header).
-- **branch**: `git rev-parse --verify <branch>` must succeed, else say `unknown branch: <branch>` and stop. Diff = `git diff <branch>...HEAD`; files = `git diff --name-only <branch>...HEAD`.
+  `mb=$(git merge-base "$base" HEAD)`. Diff = `git diff "$mb" --` (one consistent set of hunk headers covering commits since the base plus staged and unstaged changes). Touched files = `git diff --name-only "$mb" --`.
+  Untracked files: for each path from `git ls-files --others --exclude-standard`, append `git diff --no-index -- /dev/null "<path>"` to the diff (standard `@@ -0,0 +1,N @@` hunk headers with `+` lines; its exit code 1 is normal, not an error) and add the path to touched files.
+- **branch**: `git rev-parse --verify <branch>` must succeed, else say `unknown branch: <branch>` and stop. `mb=$(git merge-base <branch> HEAD)`. Diff = `git diff "$mb" --`; files = `git diff --name-only "$mb" --`.
 - **PR**: `gh --version` and `gh auth status` must both succeed; if not, say `GitHub CLI is missing or not authenticated — run: gh auth login` and stop. Diff = `gh pr diff N`; files = `gh pr diff N --name-only`.
 - If the diff is empty: say `Nothing to review.` and stop.
 
@@ -45,11 +46,11 @@ Diff:
 ## 3. Present the result
 
 - Print the agent's output verbatim — every finding block and the `Verdict:` line. Do not summarise or soften it.
-- If `--comment` was given (PR mode only): for each finding line matching `[sev] path:LINE — rule`, post an inline comment:
+- If `--comment` was given (PR mode only): for each finding line matching `[sev] path:LINE — rule`, post an inline comment. Write the body to a temp file and pass it by reference so backticks and `$vars` in `<why>`/`<fix>` never get shell-interpolated:
   ```
   sha=$(gh pr view N --json headRefOid -q .headRefOid)
-  gh api repos/{owner}/{repo}/pulls/N/comments -f commit_id="$sha" -f path="<path>" -F line=<LINE> -f side=RIGHT -f body="**[<sev>] <rule>**
-  Why: <why>
-  Fix: <fix>"
+  tmp=$(mktemp)
+  printf '%s\n' "**[<sev>] <rule>**" "Why: <why>" "Fix: <fix>" > "$tmp"
+  gh api repos/{owner}/{repo}/pulls/N/comments -f commit_id="$sha" -f path="<path>" -F line=<LINE> -f side=RIGHT -F body=@"$tmp"
   ```
-  Then post the `Verdict:` line with `gh pr comment N --body "<verdict>"`. Report how many inline comments were posted and any that failed (a line outside the diff makes the API reject the comment — fall back to including that finding in the verdict comment).
+  Then post the `Verdict:` line the same way: write it to a temp file and run `gh pr comment N --body-file "$tmp"`. Report how many inline comments were posted and any that failed (a line outside the diff makes the API reject the comment — fall back to including that finding in the verdict comment).
