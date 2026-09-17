@@ -207,7 +207,7 @@ public function markReviewed(BadgeInterface $badge): void
 | The method is `private`/`final`/`static`, or there is no event | Refactor target via `preference` (A2, last resort) or an upstream extension point |
 | A third-party module's plugin/observer misbehaves | Redeclare its `name` with `disabled="true"`; do not copy its class |
 
-After adding or editing `di.xml`/`events.xml` in developer mode: `bin/magento cache:clean config`. Production: `setup:di:compile` for plugins (interceptors are generated), `cache:clean` for both.
+After adding or editing `di.xml`/`events.xml` in developer mode: `bin/magento cache:clean config compiled_config` (plugin lists are cached in `compiled_config`). Production: `setup:di:compile` for plugins (interceptors are generated), `cache:clean` for both.
 
 ## Sources
 

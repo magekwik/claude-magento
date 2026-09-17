@@ -52,7 +52,7 @@ Two quick tests: *"Do I need to change what a method receives or returns?"* → 
 9. **A8** — `etc/di.xml` is global; `etc/frontend/`, `etc/adminhtml/`, `etc/webapi_rest/`, `etc/graphql/`, `etc/crontab/` `di.xml` are area-scoped and merge on top of global (in `<sequence>` order), so an area file wins for that area; put plugins/preferences in the narrowest area that needs them.
 10. **A3** — `events.xml` observers are singletons by default; declare `shared="false"` on any observer that keeps state between calls; scope the file to `etc/frontend/` or `etc/adminhtml/` when the event only matters there.
 11. A plugin class is constructed by the object manager: constructor arguments must be injectable services or `di.xml`-configured values — no runtime values, no `ObjectManager`; keep hot-path plugins cheap (P4).
-12. After adding a module: `bin/magento module:enable Acme_Catalog && bin/magento setup:upgrade`. After changing `di.xml`, `events.xml`, `crontab.xml` or `routes.xml` in developer mode: `bin/magento cache:clean config`; production mode also needs `setup:di:compile`.
+12. After adding a module: `bin/magento module:enable Acme_Catalog && bin/magento setup:upgrade`. After changing `di.xml`, `events.xml`, `crontab.xml` or `routes.xml` in developer mode: `bin/magento cache:clean config compiled_config` (plugin lists live in `compiled_config`); production mode also needs `setup:di:compile`.
 
 ## Minimal correct example
 

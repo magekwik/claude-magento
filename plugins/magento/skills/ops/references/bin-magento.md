@@ -12,7 +12,7 @@ Options and defaults below are from `bin/magento <command> --help` on 2.4.9 and 
 | `setup:config:set [options]` | Rewrites `app/etc/env.php` sections from the same option set as `setup:install` (DB, backend frontname, `--cache-backend=redis|valkey`, `--page-cache=redis|valkey`, `--session-save=redis|valkey`, `--http-cache-hosts=host:port,…` for Varnish purging, `--enable-debug-logging=1`, `--enable-syslog-logging`, `--document-root-is-pub=true`). `-s` skips DB validation. |
 | `setup:upgrade [--keep-generated] [--dry-run=1] [--safe-mode=1] [--data-restore=1] [--convert-old-scripts=1]` | Declarative schema for every module → schema patches → data patches → `app:config:import`; refreshes the module list in `config.php`; cleans all caches; deletes `generated/code` and `generated/metadata` unless `--keep-generated` (the help says: "We discourage using this option except when deploying to production"). In production mode without the flag it prints "Please re-run Magento compile command". `--dry-run=1` writes the DDL to `var/log/dry-run-installation.log` and touches nothing; `--safe-mode=1` dumps dropped tables/columns to `var/declarative_dumps_csv/`; `--data-restore=1` reads them back. |
 | `setup:db-declaration:generate-whitelist [--module-name=Acme_Catalog]` | Regenerates `etc/db_schema_whitelist.json`; default `--module-name=all`. Always before `setup:upgrade` after a `db_schema.xml` change (A6). |
-| `setup:db-declaration:generate-patch` | Scaffolds a patch class (`--revertable`, `--type=data|schema`). |
+| `setup:db-declaration:generate-patch <module> <patch>` | Scaffolds a patch class from the two required arguments (`Acme_Catalog AddBrandAttribute`); `--revertable=true`, `--type=data|schema` (default `data`). |
 | `setup:db:status` | "All modules are up to date." or the modules needing `setup:upgrade`; exit code `2` when an upgrade is pending (`1` when not installed) — use it in deploy scripts. |
 | `setup:db-schema:upgrade`, `setup:db-data:upgrade` | The two halves of `setup:upgrade` for scripted deploys. |
 | `setup:di:compile` | Single-tenant compiler: deletes `var/cache` and `generated/metadata`, then generates factories/proxies/interceptors into `generated/code` and the per-area DI into `generated/metadata/*.php`. Needs `memory_limit` ≥ 1G (2G recommended); takes minutes. Required in production after any PHP or `di.xml` change; not needed in developer mode. |
@@ -36,7 +36,7 @@ Options and defaults below are from `bin/magento <command> --help` on 2.4.9 and 
 | `cache:status` | Cache type → `1`/`0`. |
 | `cache:enable [types]`, `cache:disable [types]` | Writes `cache_types` in `env.php`; enabling also cleans the type. Disable `block_html full_page` while developing templates, never in production. |
 | `cache:clean [types]` | Removes entries tagged by the given types (all enabled types when omitted). Safe on shared storage. |
-| `cache:flush [types]` | Clears the *storage* behind the types — Redis `FLUSHDB` — including other applications' keys in that database. |
+| `cache:flush [types]` | Clears the *storage* behind the types. 2.4.4–2.4.8: Redis `FLUSHDB`, including other applications' keys in that database. 2.4.9: Symfony Cache `clear()` deletes only the keys under the store's `id_prefix` (auto-generated when not configured), so other prefixes survive. |
 
 Core cache types on 2.4.4–2.4.9 (`cache_types` in `env.php`; extensions add their own): `config` (merged XML configuration, `di.xml`, `events.xml`, `system.xml`, `acl.xml`, `routes.xml`, `crontab.xml`, env/config overrides), `layout` (merged layout XML), `block_html` (block output), `collections` (collection data), `reflection` (API interface reflection), `db_ddl` (DESCRIBE results), `compiled_config` (plugin lists and interception data in developer mode), `eav` (entity types and attributes), `customer_notification`, `config_integration`, `config_integration_api`, `graphql_query_resolver_result` (2.4.7+), `full_page` (built-in FPC), `config_webservice` (`webapi.xml`, WSDL), `translate` (translation dictionaries).
 
@@ -56,7 +56,7 @@ Core cache types on 2.4.4–2.4.9 (`cache_types` in `env.php`; extensions add th
 | Command | Notes |
 |---|---|
 | `deploy:mode:show` | "Current application mode: developer. (Note: Environment variables may override this value.)" — `MAGE_MODE` in `$_SERVER` beats `env.php`. |
-| `deploy:mode:set developer\|production [-s\|--skip-compilation]` | Production: clears `var/cache`, `generated/*`, `var/view_preprocessed`, `pub/static`, writes `MAGE_MODE`, runs `setup:di:compile` and `setup:static-content:deploy -f <used locales>`; `-s` only writes the mode. Developer: writes the mode and leaves `generated/` — delete it yourself. `default` mode exists but is not something you set on purpose. |
+| `deploy:mode:set developer\|production [-s\|--skip-compilation]` | Production: inside maintenance mode (enabled/disabled by the command itself) clears `var/cache`, `generated/code`, `generated/metadata`, `var/view_preprocessed`, `pub/static`, writes `MAGE_MODE`, runs `setup:di:compile` and `setup:static-content:deploy -f <store-view locales + admin interface locales>`; `-s` only writes the mode. Developer: clears the same directories, then writes the mode (the docs additionally say `rm -rf generated/metadata/* generated/code/*` first). `default` mode exists but is not something you set on purpose. |
 
 ## Configuration
 
@@ -97,7 +97,7 @@ Precedence when the same path is set in several places: environment variables (`
 
 ## Catalog and info
 
-`catalog:images:resize [-a\|--async] [--skip_hidden_images]` regenerates every product image cache (slow; `-a` queues it for the `product_action_attribute.update`-style consumers via the message queue). `catalog:product:attributes:cleanup` removes orphaned attribute values.
+`catalog:images:resize [-a\|--async] [--skip_hidden_images]` regenerates every product image cache (slow; `-a` queues the work on the `media.storage.catalog.image.resize` topic for the consumer of the same name). `catalog:product:attributes:cleanup` removes orphaned attribute values.
 
 `info:adminuri`, `info:currency:list`, `info:language:list`, `info:timezone:list`, `info:backups:list`, `info:dependencies:show-modules [-o file]`, `info:dependencies:show-framework`, `info:dependencies:show-modules-circular` (CSV reports; the circular one is the A8 check). `store:list`, `store:website:list`.
 

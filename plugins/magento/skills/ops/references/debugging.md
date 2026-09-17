@@ -64,7 +64,7 @@ Every class with a plugin is instantiated as `<Class>\Interceptor` (generated in
 #0 …/Plugin/NormalizeProductName.php(24): …                                  ← your plugin (before/around/after)
 #1 vendor/magento/framework/Interception/Interceptor.php(138): …->___callPlugins('save', Array, Array)
 #2 generated/code/Magento/Catalog/Model/ProductRepository/Interceptor.php(…): …->___callPlugins(...)
-#3 vendor/magento/module-catalog/Model/ProductRepository.php(…): …\ProductRepository\Interceptor->save(...)
+#3 vendor/magento/module-catalog/Model/Product/TierPriceManagement.php(…): …\ProductRepository\Interceptor->save(...)   ← the real caller (a service, controller or REST route)
 ```
 
 `___callPlugins` walks the plugin list for the method; `___callParent` reaches the original implementation. Frames whose file is under `generated/code` are machine-made: look one frame up for the plugin (`Plugin/`) or one frame down for the real class. `bin/magento dev:di:info 'Magento\Catalog\Api\ProductRepositoryInterface'` lists the preference, constructor arguments and every plugin on the class in sort order — use it before touching an `around` plugin. Factories (`…Factory`) and proxies (`…\Proxy`) are generated the same way; a trace inside `generated/code/.../Proxy.php` means the real object was instantiated lazily at that call.
@@ -84,7 +84,7 @@ Every class with a plugin is instantiated as `<Class>\Interceptor` (generated in
 | `Element 'block', attribute 'x': The attribute 'x' is not allowed` / `Invalid XML in file …` | XML fails XSD validation in developer mode | fix the XML; `dev:urn-catalog:generate` for IDE validation |
 | `The store that was requested wasn't found` / `Store code … not found` | `MAGE_RUN_CODE`/`MAGE_RUN_TYPE` in the server config point at a store that does not exist, or `store` table out of sync with `config.php` `scopes` | fix the env vars; `app:config:import` |
 | `Front controller reached 100 router match iterations` | a router loops on a rewrite (`url_rewrite` or `routes.xml`) | inspect the `url_rewrite` row for the request path |
-| `Notice: Undefined index` / `Warning: … in …\Interceptor` after upgrade | stale `generated/` or third-party module not yet compatible | regenerate; check the extension's release notes |
+| `Warning: Undefined array key …` / `Deprecated: …` / a `TypeError` inside `…\Interceptor` after an upgrade | stale `generated/` or a third-party module not yet compatible with the new PHP/Magento | regenerate; check the extension's release notes |
 | `Allowed memory size of … bytes exhausted` | CLI `memory_limit` too low for compile/deploy/import | `php -d memory_limit=2G bin/magento …`; raise the CLI `php.ini` |
 | `SQLSTATE[HY000] [2002] … getaddrinfo for db failed` (or `Connection refused`) | running `bin/magento` on the host with `env.php` pointing at the container's DB host | run it behind the environment prefix (`references/dev-envs.md`) |
 | `Consumer "…" skipped as required connection "amqp" is not configured` | `queue/amqp` missing in `env.php` | configure RabbitMQ or leave consumers on the DB connection |

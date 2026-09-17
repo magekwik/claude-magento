@@ -172,7 +172,7 @@ This must be in the **global** `etc/di.xml`. If the command's constructor pulls 
 
 | Change | Developer / default mode | Production mode |
 |---|---|---|
-| Any `di.xml` edit | `bin/magento cache:clean config` (the object manager config is cached) | `bin/magento setup:di:compile` then `cache:clean` |
+| Any `di.xml` edit | `bin/magento cache:clean config compiled_config` (the object manager config is in `config`, plugin lists in `compiled_config`) | `bin/magento setup:di:compile` then `cache:clean` |
 | New factory/proxy/interceptor reference | Nothing — generated on the fly under `generated/code/` | `setup:di:compile` (production does not generate at runtime) |
 | New module | `bin/magento setup:upgrade` | `setup:upgrade` then `setup:di:compile` |
 

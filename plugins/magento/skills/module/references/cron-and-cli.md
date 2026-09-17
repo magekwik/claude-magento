@@ -194,7 +194,7 @@ Use `Area::AREA_ADMINHTML` (or `AREA_FRONTEND`/`AREA_CRONTAB`) constants from `M
 ### Verifying
 
 ```bash
-bin/magento cache:clean config          # developer mode: di.xml is cached
+bin/magento cache:clean config compiled_config   # developer mode: di.xml is cached; plugin lists in compiled_config
 bin/magento setup:di:compile            # production mode only
 bin/magento list | grep acme            # command is registered
 bin/magento acme:catalog:badge-refresh --limit=50

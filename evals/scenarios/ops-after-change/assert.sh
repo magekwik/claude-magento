@@ -8,5 +8,5 @@ wl=$(grep -n 'db-declaration:generate-whitelist' "$TRANSCRIPT" | head -1 | cut -
 su=$(grep -n 'setup:upgrade' "$TRANSCRIPT" | head -1 | cut -d: -f1)
 [ "$wl" -lt "$su" ] || { echo "whitelist not before setup:upgrade"; exit 1; }
 # developer mode: di:compile must not be presented as required
-if grep -Eq 'setup:di:compile' "$TRANSCRIPT" && ! grep -Eqi 'not (needed|required)|only in production|production mode' "$TRANSCRIPT"; then echo "di:compile presented as required in developer mode"; exit 1; fi
+if grep -Eq 'setup:di:compile' "$TRANSCRIPT" && ! grep -Eqi "not (needed|required|necessary)|(don'?t|do not|no) need|unnecessary|skip(ping)? (it|this|\`?setup:di:compile)|only [a-z ]{0,12}(in|for|on) production|production[ -]mode" "$TRANSCRIPT"; then echo "di:compile presented as required in developer mode"; exit 1; fi
 exit 0
