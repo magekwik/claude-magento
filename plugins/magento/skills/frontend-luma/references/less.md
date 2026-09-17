@@ -75,7 +75,7 @@ The same-path rule cuts both ways: if a parent theme already has `web/css/source
 }
 ```
 
-Breakpoints: `@screen__xxs: 320px`, `@screen__xs: 480px`, `@screen__s: 640px`, `@screen__m: 768px`, `@screen__l: 1024px`, `@screen__xl: 1440px`. `'max'` guards land in `styles-m.css` (as `max-width: @break - 1`), `'min'` guards for `@screen__m` and above land in `styles-l.css` (plus `print`), `'min'` for `@screen__s` in `styles-m.css`. Rules outside any guard are emitted wherever the file is imported — in both CSS files.
+Breakpoints: `@screen__xxs: 320px`, `@screen__xs: 480px`, `@screen__s: 640px`, `@screen__m: 768px`, `@screen__l: 1024px`, `@screen__xl: 1440px`. `'max'` guards up to `@screen__m` land in `styles-m.css` (as `max-width: @break - 1`), `'min'` for `@screen__s` also in `styles-m.css`; `'min'` guards for `@screen__m` and above and the `'max', @screen__l` guard land in `styles-l.css` (with `print`). Rules outside any guard are emitted wherever the file is imported — in both CSS files.
 
 ## UI library
 
@@ -133,7 +133,7 @@ Grunt compiles with less.js while the storefront compiles with less.php; the out
 
 ## `etc/view.xml`
 
-Theme-level configuration read by modules: `<images module="Magento_Catalog"><image id="category_page_grid" type="small_image"><width>240</width><height>300</height></image>…</images>` sizes product images per placement (`id` values are what templates ask `Magento\Catalog\Block\Product\ImageBuilder` for), `<vars module="Magento_Catalog">` carries module-specific values (gallery options), and `<exclude><item type="file">Lib::jquery/jquery.min.js</item></exclude>` plus `<var name="bundle_size">1MB</var>` control JS bundling. Copy Luma's file as the starting point; it is not merged with the parent's, it replaces it.
+Theme-level configuration read by modules: `<images module="Magento_Catalog"><image id="category_page_grid" type="small_image"><width>240</width><height>300</height></image>…</images>` sizes product images per placement (`id` values are what `$block->getImage($product, 'category_page_grid')` / `Magento\Catalog\Block\Product\ImageFactory::create()` look up), `<vars module="Magento_Catalog">` carries module-specific values (gallery options), and `<exclude><item type="file">Lib::jquery/jquery.min.js</item></exclude>` plus `<var name="bundle_size">1MB</var>` control JS bundling. `Magento\Framework\Config\View::read()` merges every ancestor's `view.xml` under yours with `array_replace_recursive`, so a theme without the file inherits Luma's and a theme with one only needs the entries it changes — do not copy the whole parent file.
 
 ## Sources
 

@@ -39,7 +39,7 @@ var config = {
     config: {
         mixins: {
             'Magento_Checkout/js/view/shipping': { 'Acme_Catalog/js/view/shipping-mixin': true },
-            'mage/menu': { 'Acme_Catalog/js/menu-mixin': true }
+            'mage/collapsible': { 'Acme_Catalog/js/collapsible-mixin': true }
         },
         text: { headers: { 'X-Requested-With': 'XMLHttpRequest' } }        // text! plugin request headers
     }
@@ -133,24 +133,24 @@ define([], function () {
     };
 });
 
-// Acme_Catalog/js/menu-mixin.js — a jQuery widget
+// Acme_Catalog/js/collapsible-mixin.js — a jQuery widget (mage/collapsible returns $.mage.collapsible)
 define(['jquery'], function ($) {
     'use strict';
 
-    return function (menuWidget) {
-        $.widget('mage.menu', menuWidget, {
+    return function (collapsibleWidget) {
+        $.widget('mage.collapsible', collapsibleWidget, {
             _create: function () {
                 this._super();
-                this.element.addClass('acme-menu');
+                this.element.addClass('acme-collapsible');
             }
         });
 
-        return $.mage.menu;
+        return $.mage.collapsible;
     };
 });
 ```
 
-Plain functions and objects are wrapped with `mage/utils/wrapper` (`wrapper.wrap(target, function (original, ...args) {…})`, `wrapper.wrapSuper`). Mixins only apply to modules that return something; several modules can mix into the same target (applied in config-merge order), and a later `requirejs-config.js` can switch one off with `false`. The mixin plugin resolves targets through the *unbundled* module id, so `map` aliases are not valid keys.
+Plain functions and objects are wrapped with `mage/utils/wrapper` (`wrapper.wrap(target, function (original, ...args) {…})`, `wrapper.wrapSuper`). Check what the target actually exports before choosing the pattern: most core widgets return their constructor (`return $.mage.collapsible;`), but `mage/menu` returns `{ menu: $.mage.menu, navigation: $.mage.navigation }`, so a menu mixin receives that object — extend `target.menu`/`target.navigation` with `$.widget('mage.menu', target.menu, {…})` and return the object with both keys replaced, or jQuery UI throws on the plain object. Mixins only apply to modules that return something; several modules can mix into the same target (applied in config-merge order), and a later `requirejs-config.js` can switch one off with `false`. The mixin plugin resolves targets through the *unbundled* module id, so `map` aliases are not valid keys.
 
 ## Knockout / UI components
 
@@ -212,8 +212,8 @@ define(['uiComponent', 'ko', 'Magento_Customer/js/customer-data'], function (Com
 ```
 
 - `defaults` are merged with the `config` from the layout; `initialize` must call `this._super()` and return `this`.
-- Template ids resolve as `<Module>/template/<path>.html` through the same static fallback (`Acme_Catalog/notice` → theme `Acme_Catalog/web/template/notice.html`, else the module's `view/frontend/web/template/notice.html`), loaded with the `text!` plugin and cached in the browser like any static file — in developer mode a *new* `.html` needs the theme's `pub/static` and `var/view_preprocessed` cleared once; edits to an existing one show through the symlink.
-- Custom bindings from `Magento_Ui/js/lib/knockout/bindings/`: `scope`, `template`, `i18n` (`data-bind="i18n: 'Text'"` or `translate="'Text'"`), `afterRender`, `mageInit`, `bindHtml`, `fadeVisible`, `outerClick`, `keyboard`, `tooltip`, `range`, `datepicker`, `collapsible`, `optgroup`, `staticChecked`, `autoselect`. Knockout's `if`, `text`, `css`, `attr`, `click`, `visible` can be written as attributes (`if="…"`, `text="…"`) inside `.html` templates thanks to `Magento_Ui`'s renderer; `$t('Text')` is available inside a scope.
+- Template ids resolve as `<Module>/template/<path>.html` through the same static fallback (`Acme_Catalog/notice` → theme `Acme_Catalog/web/template/notice.html`, else the module's `view/frontend/web/template/notice.html`), loaded with the `text!` plugin and cached in the browser like any static file — in developer mode a genuinely new path materialises on its first request, edits to an existing one show through the symlink, and only a new file that *overrides* an already-materialised path (say a theme copy of a module template) needs that path deleted from the theme's `pub/static` (and `var/view_preprocessed`) once.
+- Custom bindings from `Magento_Ui/js/lib/knockout/bindings/`: `scope`, `i18n` (`data-bind="i18n: 'Text'"` or `translate="'Text'"`), `afterRender`, `mageInit`, `bindHtml`, `fadeVisible`, `outerClick`, `keyboard`, `tooltip`, `range`, `datepicker`, `collapsible`, `optgroup`, `staticChecked`, `autoselect`; the async `template` binding is Knockout's own, extended by the engine in `Magento_Ui/js/lib/knockout/template/` (`engine.js`, `loader.js`). Knockout's `if`, `text`, `css`, `attr`, `click`, `visible` can be written as attributes (`if="…"`, `text="…"`) inside `.html` templates thanks to `Magento_Ui`'s renderer; `$t('Text')` is available inside a scope.
 - Get a component instance from anywhere with `uiRegistry.get('acme-notice')` (async: `uiRegistry.get('acme-notice', function (c) {…})`).
 
 ## Customer-data sections (P3)

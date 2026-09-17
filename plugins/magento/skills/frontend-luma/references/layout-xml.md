@@ -22,7 +22,7 @@ Every page configuration file starts:
 </page>
 ```
 
-`<page layout="2columns-left">` selects the page layout (the `layout` attribute on the root); `<update handle="other_handle"/>` merges another handle's instructions in first. The `xsi:noNamespaceSchemaLocation` URN is resolved by IDEs (`bin/magento dev:urn-catalog:generate .idea/misc.xml`) and by static tests; at runtime the *merged* result is validated against `layout_merged.xsd`, which includes the same element definitions.
+`<page layout="2columns-left">` selects the page layout (the `layout` attribute on the root); `<update handle="other_handle"/>` merges another handle's instructions in first. The `xsi:noNamespaceSchemaLocation` URN is resolved by IDEs (`bin/magento dev:urn-catalog:generate .idea/misc.xml`) and by static tests; in developer mode the *merged* result is validated against `layout_merged.xsd`, which includes the same element definitions (other modes skip schema validation).
 
 ## Handles — which files apply to a page
 
@@ -93,7 +93,7 @@ Moves keep the element's alias unless `as` is given; the element may be a block 
 <block name="acme.notice" template="Acme_Catalog::notice.phtml" ifconfig="acme_catalog/notice/enabled"/>
 ```
 
-Read with `ScopeConfigInterface::isSetFlag()` at store scope when the structure is built; a falsy value removes the block and its children. Allowed on `<block>`, `<uiComponent>` and `<action>` only — the XSD has no `ifconfig` on `<container>`, `<referenceBlock>` or `<referenceContainer>`, and because the merged layout is validated at runtime an unknown attribute throws a `ValidationException` in developer mode and is logged (info) and ignored in production. For anything more complex than a yes/no flag, decide in the ViewModel and return early in the template.
+Read with `ScopeConfigInterface::isSetFlag()` at store scope when the structure is built; a falsy value removes the block and its children. Allowed on `<block>`, `<uiComponent>` and `<action>` only — the XSD has no `ifconfig` on `<container>`, `<referenceBlock>` or `<referenceContainer>`, and because the merged layout is schema-validated only when `ValidationState::isValidationRequired()` is true (developer mode), an unknown attribute throws a `ValidationException` there and is silently ignored — neither validated nor logged — in default and production mode. For anything more complex than a yes/no flag, decide in the ViewModel and return early in the template.
 
 ### `<arguments>` and `xsi:type`
 
@@ -135,7 +135,7 @@ Argument names must be unique per block and each `<arguments>` must contain at l
 </head>
 ```
 
-`css`, `link`, `script` and `font` share the same attribute set: `src` (required), `src_type` (`url` or `controller` for remote assets; otherwise the value is a `Vendor_Module::path` or a theme `web/` path resolved through the fallback), `order`, `defer`, `async` (script only), `media`, `rel`, `type`, `ie_condition`, `integrity`, `crossorigin`, `as`. `<remove src>` must repeat the exact `src` string that added the asset. `<title>` sets the page title; `<meta>` with `name` or `property` (Open Graph) sets metadata. The `default_head_blocks.xml` files of `Magento_Theme` (`requirejs/require.js`), `Magento/blank` (`styles-m.css`, `styles-l.css`, `print.css`) and `Magento/luma` (the fonts) are where the standard assets come from.
+`css`, `link` and `font` share `linkType`: `src` (required), `src_type` (`url` or `controller` for remote assets; otherwise the value is a `Vendor_Module::path` or a theme `web/` path resolved through the fallback), `defer`, `ie_condition`, `charset`, `hreflang`, `media`, `rel`, `rev`, `sizes`, `target`, `type`, `order`, `integrity`, `crossorigin`, `as` (`font`/`script`/`style`). `script` has its own `scriptType`: `src`, `src_type`, `defer`, `async`, `ie_condition`, `charset`, `type`, `integrity`, `crossorigin` — no `order`, `media`, `rel` or `as`. `<remove src>` must repeat the exact `src` string that added the asset. `<title>` sets the page title; `<meta name="…" content="…"/>` sets metadata (`metaType` allows `content`, `charset`, `http-equiv`, `name`, `scheme` — there is no `property` attribute). Open Graph tags are written as `<meta name="og:type" content="product"/>`; the page renderer emits `property="og:type"` for any name starting with `og:`. The `default_head_blocks.xml` files of `Magento_Theme` (`requirejs/require.js`), `Magento/blank` (`styles-m.css`, `styles-l.css`, `print.css`) and `Magento/luma` (the fonts) are where the standard assets come from.
 
 ## `<body>`
 
