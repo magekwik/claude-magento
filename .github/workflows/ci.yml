@@ -1,0 +1,50 @@
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      scenarios:
+        description: "Space-separated eval scenario names (empty = all)"
+        required: false
+        default: ""
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - run: claude plugin validate ./plugins/magento --strict
+      - run: claude plugin validate .
+      - run: shellcheck -x -P SCRIPTDIR -e SC2015 -e SC2016 plugins/magento/scripts/*.sh evals/run.sh tests/*.sh
+      - run: bash tests/run.sh
+      - name: size limits
+        run: |
+          set -e
+          for f in plugins/magento/skills/*/SKILL.md; do
+            n=$(wc -l < "$f"); [ "$n" -le 250 ] || { echo "$f has $n lines (>250)"; exit 1; }
+          done
+          for f in plugins/magento/skills/*/references/*.md; do
+            n=$(wc -l < "$f"); [ "$n" -le 420 ] || { echo "$f has $n lines (>420)"; exit 1; }
+          done
+      - name: no Magekwik-specific content in the plugin
+        run: |
+          ! grep -rniE 'magekwik|litemage\.magekwik|idea89' plugins/magento --exclude=README.md --exclude=plugin.json
+
+  evals:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: bash evals/run.sh ${{ github.event.inputs.scenarios }}
