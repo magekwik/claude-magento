@@ -24,7 +24,7 @@ for name in "${scenarios[@]}"; do
   ( cd "$work" && git init -q -b main && git add -A && git -c user.name=eval -c user.email=eval@example.com commit -qm "fixture: $fixture" )
   export WORK="$work" TRANSCRIPT="$work/.transcript.txt" PLUGIN="$PLUGIN"
   if [ -f "$dir/setup.sh" ]; then ( cd "$work" && bash "$dir/setup.sh" ); fi
-  ( cd "$work" && claude -p "$prompt" --plugin-dir "$PLUGIN" --dangerously-skip-permissions > "$TRANSCRIPT" 2>&1 ) || true
+  ( cd "$work" && claude -p "$prompt" --plugin-dir "$PLUGIN" --setting-sources project,local --dangerously-skip-permissions > "$TRANSCRIPT" 2>&1 ) || true
   if ( cd "$work" && bash "$dir/assert.sh" ); then
     echo "PASS $name"
   else

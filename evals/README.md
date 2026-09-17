@@ -10,3 +10,4 @@ Run all: `bash evals/run.sh` · one: `bash evals/run.sh module-observer`.
 Work dirs are kept under `evals/.work/<name>/` for inspection and are git-ignored.
 
 `claude -p` runs with `--dangerously-skip-permissions` because the work dir is a throwaway copy of a fixture we authored; never point the runner at a real project.
+Runs also pass `--setting-sources project,local` so the developer's user-level plugins and settings never leak into a scenario; any `setup.sh` that calls `claude -p` itself must pass the same flags.
