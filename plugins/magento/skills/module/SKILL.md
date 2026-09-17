@@ -1,0 +1,104 @@
+---
+name: module
+description: Build and modify Magento 2 modules — scaffolding, di.xml plugins/preferences/virtual types, events and observers, ViewModels, cron jobs, console commands and admin controllers with ACL. Use when adding or changing backend behaviour in Magento Open Source 2.4.
+---
+
+# Magento 2 modules
+
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.4.*
+
+Rules: see `magento:conventions` A1–A10, P6, S1. This skill cites them by ID and does not restate them.
+
+## When to use
+
+- Adding or changing backend behaviour in a new or existing `app/code/<Vendor>/<Module>` module.
+- Intercepting a core or third-party public method (plugin) or swapping an implementation (preference).
+- Reacting to something that happened (order placed, entity saved, customer registered) with an observer.
+- Scheduled work (cron) or developer/ops commands (`bin/magento` console commands).
+- Admin actions: controllers, ACL resources, menu entries; frontend controllers and routes.
+- Wiring a ViewModel or any other class through `di.xml` (arguments, virtual types, proxies, factories).
+
+## When not to
+
+- Database schema, data patches, models/resource models/collections, repositories, EAV or extension attributes → `magento:data`.
+- REST or GraphQL endpoints, `webapi.xml`, integration tokens → `magento:api`.
+- Templates, layout XML, JavaScript, CSS → `magento:frontend-luma` or `magento:frontend-hyva`.
+
+## Decision guide
+
+| Need | Use | Reference |
+|---|---|---|
+| Change a public method's input, output or behaviour | Plugin (`before`/`after`; `around` only to skip the original) | `plugins-vs-observers.md` |
+| Replace an interface implementation everywhere | `preference` in `di.xml` (last resort) | `di-xml.md` |
+| Same class, different constructor args | Virtual type | `di-xml.md` |
+| React after something happened (order placed, entity saved) | Observer + `events.xml` (area-scoped) | `plugins-vs-observers.md` |
+| Add data to an entity for other modules/APIs | Extension attribute | `magento:data` |
+| Scheduled work | Cron job + `crontab.xml` group | `cron-and-cli.md` |
+| Developer/ops command | `Console/Command` + `di.xml` `commandList` | `cron-and-cli.md` |
+| Admin action | Controller with `ADMIN_RESOURCE` + `acl.xml` + `menu.xml` | `scaffold.md` |
+
+Two quick tests: *"Do I need to change what a method receives or returns?"* → plugin. *"Do I only need to know that it happened?"* → observer. Never a preference for either.
+
+## Rules that bite
+
+1. **A1** — No `ObjectManager::getInstance()` and no injected `ObjectManagerInterface`; every dependency (including `Psr\Log\LoggerInterface`) is a typed constructor parameter.
+2. **A2** — Plugins cannot target `final` classes/methods, `private`/`protected` methods, `static` methods or `__construct`; an `around` plugin must call `$proceed(...)` or the original method and every later plugin are silently skipped.
+3. **A3** — Observers return nothing and change nothing except through side effects; `execute()` is `void`, and if you find yourself wanting the return value you need a plugin.
+4. **A8** — Every module you touch classes or events from goes in `etc/module.xml` `<sequence>` and, for Composer-installed modules, `composer.json` `require`.
+5. **A9** — `new` only for value objects and exceptions; generated `XxxFactory` for models/DTOs, `\Xxx\Proxy` via `di.xml` (never type-hinted) for heavy dependencies.
+6. **P6** — Every cron job is idempotent, bounded (page or limit its work) and in a named group; long jobs get their own group with `use_separate_process`.
+7. **S1** — Every admin controller sets `public const ADMIN_RESOURCE = 'Acme_Catalog::something'` and that resource exists in `etc/acl.xml`; menu entries reference the same resource.
+8. Plugin order across plugins is by `sortOrder` (ascending; missing `sortOrder` sorts first): all `before`s run, then `around`s wrap inward, then the original, then `after`s — never rely on order between two plugins of the same `sortOrder`.
+9. `etc/di.xml` is global; `etc/frontend/`, `etc/adminhtml/`, `etc/webapi_rest/`, `etc/graphql/`, `etc/crontab/` `di.xml` are area-scoped and merge on top of global, so an area file wins for that area; put plugins/preferences in the narrowest area that needs them.
+10. `events.xml` observers are singletons by default; declare `shared="false"` on any observer that keeps state between calls; scope the file to `etc/frontend/` or `etc/adminhtml/` when the event only matters there.
+11. A plugin class is constructed by the object manager: constructor arguments must be injectable services or `di.xml`-configured values — no runtime values, no `ObjectManager`; keep hot-path plugins cheap (P4).
+12. After adding a module: `bin/magento module:enable Acme_Catalog && bin/magento setup:upgrade`. After changing `di.xml`, `events.xml`, `crontab.xml` or `routes.xml` in developer mode: `bin/magento cache:clean config`; production mode also needs `setup:di:compile`.
+
+## Minimal correct example
+
+An `after` plugin on `ProductRepositoryInterface::get` that appends a computed value to the product's custom attributes.
+
+`app/code/Acme/Catalog/etc/di.xml`:
+
+```xml
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Catalog\Api\ProductRepositoryInterface">
+        <plugin name="acme_catalog_product_badge" type="Acme\Catalog\Plugin\ProductRepositoryBadge" sortOrder="10"/>
+    </type>
+</config>
+```
+
+`app/code/Acme/Catalog/Plugin/ProductRepositoryBadge.php`:
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace Acme\Catalog\Plugin;
+
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+
+class ProductRepositoryBadge
+{
+    public function afterGet(ProductRepositoryInterface $subject, ProductInterface $product): ProductInterface
+    {
+        $product->setCustomAttribute('acme_badge', $product->getPrice() > 100 ? 'premium' : 'standard');
+        return $product;
+    }
+}
+```
+
+Why this shape: the plugin targets the *interface* so it fires for every implementation and every caller (controllers, REST, GraphQL); `afterGet` receives the result as its second parameter and must return it; no constructor is needed because the plugin has no dependencies. `setCustomAttribute` only stores codes that exist as product EAV attributes — create `acme_badge` with a data patch (`magento:data`) or use an extension attribute for non-EAV data.
+
+The same rules applied to an observer: `Observer/OrderPlacedLogger.php` implements `Magento\Framework\Event\ObserverInterface`, injects `Psr\Log\LoggerInterface` through its constructor, `execute(Observer $observer): void` reads `$observer->getEvent()->getData('order')` and logs; `etc/events.xml` binds it to `sales_order_place_after`. See `plugins-vs-observers.md` for the full listing.
+
+## Routing table
+
+| For | Read |
+|---|---|
+| New module files, directory layout, `composer.json`, admin/frontend controllers, ACL, menu, routes, enabling | `references/scaffold.md` |
+| `type`/`virtualType`, argument types, `preference`, `plugin` attributes, area precedence, `shared`, proxies, factories, `commandList`, compile | `references/di-xml.md` |
+| Plugin signatures and ordering, limitations, interface vs class targets; `events.xml`, observers, dispatching events, common core events | `references/plugins-vs-observers.md` |
+| `crontab.xml`, cron groups, `cron:run`, `cron_schedule` states, idempotency; console command class and registration | `references/cron-and-cli.md` |
