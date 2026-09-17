@@ -122,9 +122,11 @@ Body shape (JSON): `{"message": "…", "parameters": {…} | [...], "errors": [{
 | `AuthorizationException`, `AuthenticationException` | 401 | message |
 | any other `LocalizedException` (`InputException`, `CouldNotSaveException`, `CouldNotDeleteException`, `StateException`, `ValidatorException`) | 400 | message |
 | `\InvalidArgumentException`, `\UnexpectedValueException`, `\BadMethodCallException`, `\PDOException`, `Zend_Db_*` | 400 | masked: `Internal Error. Details are available in Magento log file. Report ID: webapi-…` (real message only in developer mode) |
-| anything else (`\RuntimeException`, `\TypeError`, …) | 500 | masked as above; logged to `var/log/exception.log` |
+| any other `\Exception` (`\RuntimeException`, `\LogicException`, …) | 500 | masked as above; logged to `var/log/exception.log` |
+| `\TypeError` raised inside the service call (wrong argument type reaching a typed parameter) | 400 | the **raw** PHP message in every mode — `SynchronousRequestProcessor` re-throws it as `WebapiException(__($e->getMessage()))`, which `maskException()` passes through, so it can include a file path |
+| any other `\Error` (`\Error`, `\DivisionByZeroError`, or a `\TypeError` thrown outside the service call — in output serialisation, say) | 500 | not JSON: `Rest::dispatch()` catches `\Exception` only, so `Bootstrap::run()` ends in `terminate()` — `text/plain` `An error has happened during application run. See exception log for details.` (the exception dump in developer mode) |
 
-Framework-generated: no route → 404 `Request does not match any route.`; ACL failure → 401 `The consumer isn't authorized to access %resources.`; missing parameter, unknown field, wrong scalar type → 400; `secure` violated → 400; backpressure → 429 `Too Many Requests`. Throw `LocalizedException` subclasses with `__()` phrases (Q5) — a bare `\Exception` becomes an opaque 500.
+Framework-generated: no route → 404 `Request does not match any route.`; ACL failure → 401 `The consumer isn't authorized to access %resources.`; missing parameter, unknown field, wrong scalar type → 400; `secure` violated → 400; backpressure → 429 `Too Many Requests`. Throw `LocalizedException` subclasses with `__()` phrases (Q5) — a bare `\Exception` becomes an opaque 500, and a `\TypeError` leaks its message.
 
 ## Authentication in one screen
 

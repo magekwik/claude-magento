@@ -52,7 +52,7 @@
 | Ref | Who passes | Mechanism |
 |---|---|---|
 | `Acme_Catalog::brands_view` (any `acl.xml` id) | admin users and integrations whose role allows it | `AclRetriever` → role rules |
-| `self` | any request carrying a valid **customer** token (or customer session over XHR) | `Magento_Customer`'s `CustomerAuthorization` plugin answers "allowed" for customer user type; admins and integrations do **not** pass `self` |
+| `self` | any request carrying a valid **customer** token (or customer session over XHR) for a customer of this website | `Magento_Customer`'s `CustomerAuthorization` plugin answers "allowed" when the user type is customer *and* the current store is among the customer's shared store ids (`Customer\Model\Customer\Authorization::isAllowed()`); admins and integrations do **not** pass `self` |
 | `anonymous` | everyone, token or not | `GuestAuthorization` plugin short-circuits `isAllowed()` |
 
 - `self` says "some customer is logged in", nothing about *which* record the call touches. Pair it with `<data><parameter name="customerId" force="true">%customer_id%</parameter></data>` (or `cartId` → `%cart_id%` in checkout modules) so the service works on the token's customer, and write the service to take that id — never one from the body.
@@ -61,7 +61,7 @@
 
 ## Authentication
 
-Every API request is resolved to a user context by `CompositeUserContext` in sort order: `Authorization: Bearer <token>` (`TokenUserContext` — admin, customer or integration token), OAuth 1.0a signature (`OauthUserContext` — integration), session, else guest.
+Every API request is resolved to a user context by `CompositeUserContext` in `webapi_rest` `di.xml` sort order: `Authorization: Bearer <token>` (`TokenUserContext`, 10 — admin, customer or integration token), customer session (`CustomerSessionUserContext`, 20), admin session (`AdminSessionUserContext`, 30), OAuth 1.0a signature (`OauthUserContext`, 40 — integration), else guest (100).
 
 ### Admin and customer tokens
 
@@ -94,7 +94,7 @@ A customer logged into the storefront can call REST from the browser with the se
 ### GraphQL
 
 - Customers: `mutation { generateCustomerToken(email: "…", password: "…") { token } }`, then `Authorization: Bearer <token>`; same 1 h lifetime and lockout as REST customer tokens; `mutation { revokeCustomerToken { result } }` to log out. There is no admin token mutation and admin tokens are not meant for GraphQL — use REST for admin work.
-- Anything that reads or writes a specific customer's data needs the token: `customer` (and its `orders`), `customerCart`, `wishlist`, `updateCustomer`, `createCustomerAddress`, `setShippingAddressesOnCart` on a customer cart, `placeOrder` on a customer cart. Guest carts work without a token through the masked `cart_id` (`createEmptyCart`); a guest cart used *with* a customer token is refused (`The current user cannot perform operations on cart "…"`, `graphql-authorization`) — merge it with `mergeCarts` after login instead. Public catalogue queries (`products`, `categories`, `cmsPage`, `storeConfig`) take no token.
+- Anything that reads or writes a specific customer's data needs the token: `customer` (and its `orders`), `customerCart`, `wishlist`, `updateCustomer`, `createCustomerAddress`, `setShippingAddressesOnCart` on a customer cart, `placeOrder` on a customer cart. Guest carts work without a token through the masked `cart_id` (`createGuestCart` since 2.4.7; `createEmptyCart` on 2.4.4–2.4.6, still present but deprecated in 2.4.9 in favour of `createGuestCart` / `customerCart`); a guest cart used *with* a customer token is refused (`The current user cannot perform operations on cart "…"`, `graphql-authorization`) — merge it with `mergeCarts` after login instead. Public catalogue queries (`products`, `categories`, `cmsPage`, `storeConfig`) take no token.
 - In a resolver, `$context->getExtensionAttributes()->getIsCustomer()` / `$context->getUserId()` identify the caller; throw `GraphQlAuthorizationException(__('The current customer isn\'t authorized.'))` when a guest hits a customer-only field (403; `graphql.md`).
 - GraphQL also honours the storefront session cookie; `bin/magento config:set graphql/session/disable 1` turns that off so headless clients rely on tokens only (recommended by Adobe; avoids session locks).
 
@@ -104,13 +104,13 @@ APIs are protected by tokens; browser-facing controllers (`frontend` and `adminh
 
 ### Verb interfaces (S2)
 
-Implement one of `Magento\Framework\App\Action\HttpGetActionInterface`, `HttpPostActionInterface`, `HttpPutActionInterface`, `HttpDeleteActionInterface`, `HttpPatchActionInterface`, `HttpHeadActionInterface`, `HttpOptionsActionInterface` (or several) instead of the bare `ActionInterface`. `HttpMethodValidator` then rejects any other verb with a 404 *Page not found* (logged at debug level as `URI '…' cannot be accessed with GET method`). A mutating action is `HttpPostActionInterface` only — that is what makes the form-key check reachable, because the check runs on POST alone.
+Implement one of the ten `Magento\Framework\App\Action\Http*ActionInterface`s — `HttpGetActionInterface`, `HttpPostActionInterface`, `HttpPutActionInterface`, `HttpDeleteActionInterface`, `HttpPatchActionInterface`, `HttpHeadActionInterface`, `HttpOptionsActionInterface`, `HttpConnectActionInterface`, `HttpTraceActionInterface`, `HttpPropfindActionInterface` (the first two are what you will use) — or several, instead of the bare `ActionInterface`. `HttpMethodValidator` then rejects any other verb with a 404 *Page not found* (logged at debug level as `URI '…' cannot be accessed with GET method`). A mutating action is `HttpPostActionInterface` only — that is what makes the form-key check reachable, because the check runs on POST alone.
 
 ### Form key
 
 `CsrfValidator` (frontend area) accepts a request when it is not POST, **or** it is XHR (`X-Requested-With: XMLHttpRequest`), **or** `form_key` in the request equals the session's key (`Magento\Framework\Data\Form\FormKey\Validator`, constant-time compare). Otherwise it throws `InvalidRequestException` → redirect to the referer (or base URL) with the message `Invalid Form Key. Please refresh the page.`
 
-- Templates: `<?= $block->getBlockHtml('formkey') ?>` renders `<input name="form_key" type="hidden" value="…"/>`; Luma's `lib/web/mage/common.js` also injects `form_key` into every non-GET form on submit, and the global `FORM_KEY` JS variable holds it for hand-written requests. PHP: `Magento\Framework\Data\Form\FormKey::getFormKey()`. Hyvä has its own helper — see `magento:frontend-hyva`.
+- Templates: `<?= $block->getBlockHtml('formkey') ?>` renders `<input name="form_key" type="hidden" value="…"/>`. On the storefront the key is delivered FPC-safely by `Magento_PageCache`'s `form-key-provider.js`, which keeps it in the `form_key` cookie and fills every `input[name="form_key"]`; `lib/web/mage/common.js` then copies that value into a non-GET form on submit when the form lacks its own and its action is on the site's base URL — a form with an empty page (no `form_key` input anywhere) or an external action gets nothing. The global `FORM_KEY` JS variable exists only in the admin (`Magento_Backend`'s `require_js.phtml`); storefront scripts read the cookie or the hidden input. PHP: `Magento\Framework\Data\Form\FormKey::getFormKey()`. Hyvä has its own helper — see `magento:frontend-hyva`.
 - The form key is per session and rotates on login; a cached page that embeds it is the classic *Invalid Form Key* bug — the key must come from private content (customer-data sections / Hyvä private content), never from FPC-cached markup (P3).
 - Admin area: `Magento\Backend\App\Request\BackendValidator` (via `AbstractAction::_processUrlKeys()`) requires `form_key` on every POST with no XHR exemption, and the secret `key` URL parameter on every other request while *Stores → Configuration → Advanced → Admin → Security → Add Secret Key to URLs* is on (the default); admin links must therefore come from `$block->getUrl()` / `UrlInterface`. Failure redirects to the dashboard (or returns `{"error": true, "message": …}` when `isAjax=1`).
 
@@ -186,3 +186,4 @@ class Receive implements HttpPostActionInterface, CsrfAwareActionInterface
 - https://developer.adobe.com/commerce/php/tutorials/backend/create-access-control-list-rule — Create Access Control List rules (`acl.xml` tree under `Magento_Backend::admin`, `Vendor_ModuleName::resourceName`, `ADMIN_RESOURCE`, `menu.xml` `resource`, `webapi.xml` `<resource ref>`, `aclResource` on blocks, System → Permissions → User Roles → Resource Access: Custom)
 - https://developer.adobe.com/commerce/php/development/security/cross-site-request-forgery — Cross-Site Request Forgery (form keys added by `lib/web/mage/common.js`, `FORM_KEY` global, `Magento\Framework\Data\Form\FormKey`, `Http<Method>ActionInterface` opt-in, `CsrfAwareActionInterface` to customise validation)
 - https://developer.adobe.com/commerce/webapi/rest/use-rest/anonymous-api-security — Restricting access to anonymous web APIs (*Allow Anonymous Guest Access*, affected catalogue/CMS/store read endpoints)
+- https://experienceleague.adobe.com/en/docs/commerce-operations/release/notes/magento-open-source/2-4-7 — Magento Open Source 2.4.7 release notes (`createGuestCart` added, `createEmptyCart` deprecated)
