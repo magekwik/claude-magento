@@ -1,6 +1,6 @@
 ---
 name: review
-description: Review a diff, branch, or GitHub PR for Magento-specific defects using the magento:code-reviewer agent. Usage: /magento:review [branch|PR-number] [--comment]
+description: "Review a diff, branch, or GitHub PR for Magento-specific defects using the magento:code-reviewer agent. Usage: /magento:review [branch|PR-number] [--comment]"
 ---
 
 # /magento:review
