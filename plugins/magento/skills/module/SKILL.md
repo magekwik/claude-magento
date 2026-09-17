@@ -5,7 +5,7 @@ description: Build and modify Magento 2 modules — scaffolding, di.xml plugins/
 
 # Magento 2 modules
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.4.*
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).*
 
 Rules: see `magento:conventions` A1–A10, P6, S1. This skill cites them by ID and does not restate them.
 
@@ -48,9 +48,9 @@ Two quick tests: *"Do I need to change what a method receives or returns?"* → 
 5. **A9** — `new` only for value objects and exceptions; generated `XxxFactory` for models/DTOs, `\Xxx\Proxy` via `di.xml` (never type-hinted) for heavy dependencies.
 6. **P6** — Every cron job is idempotent, bounded (page or limit its work) and in a named group; long jobs get their own group with `use_separate_process`.
 7. **S1** — Every admin controller sets `public const ADMIN_RESOURCE = 'Acme_Catalog::something'` and that resource exists in `etc/acl.xml`; menu entries reference the same resource.
-8. Plugin order across plugins is by `sortOrder` (ascending; missing `sortOrder` sorts first): all `before`s run, then `around`s wrap inward, then the original, then `after`s — never rely on order between two plugins of the same `sortOrder`.
-9. `etc/di.xml` is global; `etc/frontend/`, `etc/adminhtml/`, `etc/webapi_rest/`, `etc/graphql/`, `etc/crontab/` `di.xml` are area-scoped and merge on top of global, so an area file wins for that area; put plugins/preferences in the narrowest area that needs them.
-10. `events.xml` observers are singletons by default; declare `shared="false"` on any observer that keeps state between calls; scope the file to `etc/frontend/` or `etc/adminhtml/` when the event only matters there.
+8. **A2** — Plugins run by `sortOrder`; each `around` nests every higher-sorted plugin's before/around/after inside its `$proceed` — see `plugins-vs-observers.md` for the exact chain.
+9. **A8** — `etc/di.xml` is global; `etc/frontend/`, `etc/adminhtml/`, `etc/webapi_rest/`, `etc/graphql/`, `etc/crontab/` `di.xml` are area-scoped and merge on top of global (in `<sequence>` order), so an area file wins for that area; put plugins/preferences in the narrowest area that needs them.
+10. **A3** — `events.xml` observers are singletons by default; declare `shared="false"` on any observer that keeps state between calls; scope the file to `etc/frontend/` or `etc/adminhtml/` when the event only matters there.
 11. A plugin class is constructed by the object manager: constructor arguments must be injectable services or `di.xml`-configured values — no runtime values, no `ObjectManager`; keep hot-path plugins cheap (P4).
 12. After adding a module: `bin/magento module:enable Acme_Catalog && bin/magento setup:upgrade`. After changing `di.xml`, `events.xml`, `crontab.xml` or `routes.xml` in developer mode: `bin/magento cache:clean config`; production mode also needs `setup:di:compile`.
 
@@ -84,13 +84,13 @@ class ProductRepositoryBadge
 {
     public function afterGet(ProductRepositoryInterface $subject, ProductInterface $product): ProductInterface
     {
-        $product->setCustomAttribute('acme_badge', $product->getPrice() > 100 ? 'premium' : 'standard');
+        $product->setData('acme_badge', $product->getPrice() > 100 ? 'premium' : 'standard');
         return $product;
     }
 }
 ```
 
-Why this shape: the plugin targets the *interface* so it fires for every implementation and every caller (controllers, REST, GraphQL); `afterGet` receives the result as its second parameter and must return it; no constructor is needed because the plugin has no dependencies. `setCustomAttribute` only stores codes that exist as product EAV attributes — create `acme_badge` with a data patch (`magento:data`) or use an extension attribute for non-EAV data.
+Why this shape: the plugin targets the *interface* so it fires for every implementation and every caller (controllers, REST, GraphQL); `afterGet` receives the result as its second parameter and must return it; no constructor is needed because the plugin has no dependencies. `setData` makes the value available to templates and PHP callers; to expose it over REST/GraphQL declare an extension attribute — see `magento:data`.
 
 The same rules applied to an observer: `Observer/OrderPlacedLogger.php` implements `Magento\Framework\Event\ObserverInterface`, injects `Psr\Log\LoggerInterface` through its constructor, `execute(Observer $observer): void` reads `$observer->getEvent()->getData('order')` and logs; `etc/events.xml` binds it to `sales_order_place_after`. See `plugins-vs-observers.md` for the full listing.
 

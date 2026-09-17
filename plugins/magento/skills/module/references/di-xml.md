@@ -1,6 +1,6 @@
 # di.xml — dependency injection configuration
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.4.* Rules cited by ID are in `magento:conventions` (A1, A2, A9 apply throughout).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A1, A2, A9 apply throughout).
 
 `di.xml` tells the object manager how to build classes: which implementation satisfies an interface (`preference`), what constructor arguments a class receives (`type`/`arguments`), named variants of a class (`virtualType`), and which interceptors wrap it (`plugin`). Every file starts:
 
@@ -66,7 +66,7 @@ Put a plugin, preference or argument in the narrowest area that needs it: an `ad
 | `boolean` | `true`/`false` (also `1`/`0`) |
 | `const` | The value of a class constant, written `Fully\Qualified\Class::CONST` |
 | `object` | An instance of the named class, interface (resolved through `preference`) or virtual type; add `shared="false"` for a fresh instance |
-| `array` | An array of `<item name="key" xsi:type="...">` entries; nested `array` items allowed; items that are themselves arrays with a `sortOrder` entry are sorted by it (the core pool pattern) |
+| `array` | An array of `<item name="key" xsi:type="...">` entries; nested `array` items allowed; DI orders items by a `sortOrder="N"` *attribute* on `object`/`string` items — a nested `<item name="sortOrder">` entry (the core pool pattern) is sorted by the consuming pool class, not by DI |
 | `init_parameter` | A bootstrap parameter (the `$params` passed to `Bootstrap::create`, e.g. `MAGE_MODE`) named by a constant, e.g. `Magento\Framework\App\State::PARAM_MODE` |
 | `null` | `null` |
 

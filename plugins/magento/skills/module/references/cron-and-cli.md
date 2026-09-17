@@ -1,6 +1,6 @@
 # Cron jobs and console commands
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.4.* Rules cited by ID are in `magento:conventions` (P6 for cron; A1, A9 throughout).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (P6 for cron; A1, A9 throughout).
 
 ## Cron jobs
 
@@ -65,7 +65,7 @@ Idempotency and bounds (P6):
 - Running the job twice, or after a crash mid-way, must be safe: select work by state (`stale`, `pending`, `updated_at < ...`), not by "since the last run", and mark items done as you go.
 - Bound each run (page size, time budget) so a backlog never produces a run that outlives `schedule_lifetime`; leave the remainder for the next tick.
 - Throw on failure — a thrown exception marks the row `error` with the message; swallowing it marks `success` and hides the problem. Log with a job-name prefix so `var/log/cron.log`/`system.log` are greppable.
-- Never reindex or invalidate indexers from a job (P5); keep the cron area free of request-scoped assumptions (no session, no store context unless you emulate it).
+- Do not trigger a full reindex from a job — indexers have their own `index` group and *Update by Schedule* (P5); keep the cron area free of request-scoped assumptions (no session, no store context unless you emulate it).
 
 ### `etc/cron_groups.xml` — own group and separate process
 
@@ -88,7 +88,7 @@ All values are minutes except `use_separate_process` (`1`/`0`). The `default` gr
 
 - `use_separate_process` = `1` makes `cron:run` fork `bin/magento cron:run --group=<id>` for the group, so a long or crashing job cannot stall the `default` group (P6).
 - `schedule_lifetime` is how long a pending row may wait past `scheduled_at` before it is marked `missed`; raise it for a group whose jobs legitimately queue behind each other.
-- A group id only exists once some module declares it in `cron_groups.xml`; a `crontab.xml` group with no `cron_groups.xml` entry inherits the defaults, but declare it anyway so the admin settings appear.
+- `cron_groups.xml` is required, not optional: the runner reads `system/cron/<group>/<setting>` with no fallback, and those values are seeded only from `cron_groups.xml`. An undeclared group has `schedule_ahead_for` = 0, so no `cron_schedule` rows are ever generated and its jobs never run.
 
 ### Running and verifying
 
@@ -162,7 +162,7 @@ class BadgeRefresh extends Command
 }
 ```
 
-- `configure()` and `execute()` are `protected`; declare `execute(...): int` and always return an int — 2.4.9 ships Symfony Console 7.x, where the base method is typed `: int`, and earlier 2.4.x (Console 5/6) accept the typed signature too.
+- `configure()` and `execute()` are `protected`; declare `execute(...): int` and always return an int — 2.4.9 ships Symfony Console 7.x, where the base method is typed `: int`, and earlier 2.4.x (Console 4.4/5/6) accept the typed signature too.
 - Keep `parent::__construct($name)`; Symfony needs it. Constructor-inject services (A1, A9); the object manager builds the command, so every dependency must be injectable.
 - Options: `InputOption::VALUE_REQUIRED` (takes a value), `VALUE_NONE` (flag), `VALUE_OPTIONAL`, `VALUE_IS_ARRAY`; arguments: `InputArgument::REQUIRED`/`OPTIONAL`/`IS_ARRAY` via `addArgument()`.
 - Name commands `<vendor>:<module>:<verb>` so `bin/magento list` groups them.
@@ -189,7 +189,7 @@ Use `Area::AREA_ADMINHTML` (or `AREA_FRONTEND`/`AREA_CRONTAB`) constants from `M
 ```
 
 - Global `etc/di.xml` only (the CLI loads no area). The `item name` is any unique key.
-- Every registered command is instantiated on every `bin/magento` invocation — including `cache:clean` in deploy scripts. Inject heavy dependencies as `\Proxy` via `di.xml` (`di-xml.md`) so `bin/magento list` stays fast and a broken dependency in your command cannot break every other command: in developer mode a command whose constructor throws aborts the whole `bin/magento` binary (production logs the failure and drops the command list).
+- Every registered command is instantiated on every `bin/magento` invocation — including `cache:clean` in deploy scripts. Inject heavy dependencies as `\Proxy` via `di.xml` (`di-xml.md`) so `bin/magento list` stays fast. A command that cannot be built — its constructor throws, or the `<item>` names a class that does not exist — fails the whole `CommandListInterface`: in developer mode `bin/magento` aborts with the exception; in production mode the error is logged to `var/log/system.log` ("CRITICAL: Core Magento commands ... are unavailable!"), `bin/magento list` shows no Magento commands, and any Magento command exits 1 with "Some commands failed to load" (2.4.9 behaviour; 2.4.8 and earlier abort in every mode).
 
 ### Verifying
 
@@ -200,7 +200,7 @@ bin/magento list | grep acme            # command is registered
 bin/magento acme:catalog:badge-refresh --limit=50
 ```
 
-If the command is missing from `list`: the `di.xml` edit is not in the global file, the class name in `<item>` is wrong (no exception — silently absent), or config cache is stale.
+If the command is missing from `list` with no error: the `di.xml` edit is not in the global file, or the config cache is stale. If *every* Magento command is missing or `bin/magento` aborts, one registered command failed to build — see above.
 
 ## Cron vs command vs queue
 

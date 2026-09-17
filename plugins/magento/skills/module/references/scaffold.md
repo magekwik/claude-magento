@@ -1,6 +1,6 @@
 # Module scaffold
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.4.* Example vendor is `Acme`; module `Acme_Catalog` lives at `app/code/Acme/Catalog`. Rules cited by ID are in `magento:conventions`.
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Example vendor is `Acme`; module `Acme_Catalog` lives at `app/code/Acme/Catalog`. Rules cited by ID are in `magento:conventions`.
 
 ## Minimal module (three files)
 
@@ -32,7 +32,7 @@ ComponentRegistrar::register(ComponentRegistrar::MODULE, 'Acme_Catalog', __DIR__
 ```
 
 - `name` is `<Vendor>_<Module>` and must match the PSR-4 namespace `Acme\Catalog` and the directory `app/code/Acme/Catalog`.
-- `<sequence>` lists modules that must load *before* this one. It governs the merge order of configuration (`di.xml`, `events.xml`, layout) and the order of setup classes. List every module whose classes, events, layout handles or config you rely on (A8). No `setup_version` attribute: it was dropped in favour of declarative schema and patches (2.3+).
+- `<sequence>` lists modules that must load *before* this one. It governs the merge order of configuration (`di.xml`, `events.xml`, layout) and the order of setup classes. List every module whose classes, events, layout handles or config you rely on (A8). No `setup_version` attribute: it is still accepted by `module.xsd` but no longer needed since declarative schema and patches (2.3+).
 - Adding a module to `<sequence>` does **not** install it. Composer `require` does that (next section).
 
 `app/code/Acme/Catalog/composer.json` (optional for `app/code`, required for a Composer package):
@@ -45,7 +45,7 @@ ComponentRegistrar::register(ComponentRegistrar::MODULE, 'Acme_Catalog', __DIR__
     "version": "1.0.0",
     "license": "MIT",
     "require": {
-        "php": "~8.1.0||~8.2.0||~8.3.0||~8.4.0",
+        "php": "~8.1.0||~8.2.0||~8.3.0||~8.4.0||~8.5.0",
         "magento/framework": "*",
         "magento/module-catalog": "*",
         "magento/module-sales": "*"
@@ -254,7 +254,7 @@ class Index extends Action implements HttpGetActionInterface
 }
 ```
 
-A `Save` action follows the same pattern with `HttpPostActionInterface`, `ADMIN_RESOURCE = 'Acme_Catalog::badges_save'`, and `$this->resultRedirectFactory->create()->setPath('*/*/index')` (the redirect factory comes from `Context`). Admin POSTs are form-key protected by the backend router; there is nothing extra to add.
+A `Save` action follows the same pattern with `HttpPostActionInterface`, `ADMIN_RESOURCE = 'Acme_Catalog::badges_save'`, and `$this->resultRedirectFactory->create()->setPath('*/*/index')` (the redirect factory comes from `Context`). Admin POSTs are form-key checked by `Magento\Backend\App\Request\BackendValidator` (the adminhtml `CsrfRequestValidator`) before the action runs; there is nothing extra to add.
 
 The page needs a layout handle `view/adminhtml/layout/acme_catalog_badge_index.xml` (route id + controller + action) — see `magento:frontend-luma` for layout XML.
 

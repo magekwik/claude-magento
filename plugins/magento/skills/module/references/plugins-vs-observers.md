@@ -1,6 +1,6 @@
 # Plugins vs observers
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.4.* Rules cited by ID are in `magento:conventions` (A1, A2, A3 apply throughout).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A1, A2, A3 apply throughout).
 
 **Plugin** (interceptor): wraps one public method of one class or interface; can read/replace arguments, read/replace the result, or skip the call. **Observer**: runs when a named event is dispatched; receives the event payload; its return value is ignored. Choose by asking whether you must change the method's input/output (plugin) or only react to the fact that something happened (observer).
 
@@ -88,13 +88,13 @@ class ProductRepositoryBadge
 {
     public function afterGet(ProductRepositoryInterface $subject, ProductInterface $product): ProductInterface
     {
-        $product->setCustomAttribute('acme_badge', $product->getPrice() > 100 ? 'premium' : 'standard');
+        $product->setData('acme_badge', $product->getPrice() > 100 ? 'premium' : 'standard');
         return $product;
     }
 }
 ```
 
-`get($sku, $editMode = false, $storeId = null, $forceReload = false)` has four parameters; the plugin may declare any prefix of them after `$result` (here none). `acme_badge` must exist as a product EAV attribute for `setCustomAttribute` to keep it.
+`get($sku, $editMode = false, $storeId = null, $forceReload = false)` has four parameters; the plugin may declare any prefix of them after `$result` (here none). `setData` makes the value available to templates and PHP callers; to expose it over REST/GraphQL declare an extension attribute — see `magento:data`.
 
 ## Observers
 
@@ -171,7 +171,7 @@ public function markReviewed(BadgeInterface $badge): void
 ```
 
 - Name events `<vendor>_<entity>_<verb>` in lower snake case; suffix with `_before`/`_after` around an operation. Names are global — prefix with your vendor to avoid collisions.
-- Pass objects, not IDs, so observers need no extra loads (P1). Adobe's technical guidelines (14.1, 14.3) say observers must not modify the values passed with an event nor the state of observed objects — if the dispatcher needs an answer back, that is a plugin or an explicit extension point, not an event (A3). Never dispatch events from a constructor (2.3.2).
+- Pass objects, not IDs, so observers need no extra loads. Adobe's technical guidelines (14.1, 14.3) say observers must not modify the values passed with an event nor the state of observed objects — if the dispatcher needs an answer back, that is a plugin or an explicit extension point, not an event (A3). Never dispatch events from a constructor (2.3.2).
 - Models extending `AbstractModel` already dispatch `<_eventPrefix>_load_after`, `_save_before`, `_save_after`, `_save_commit_after`, `_delete_before`, `_delete_after` with the entity under `<_eventObject>`; set `$_eventPrefix`/`$_eventObject` on your model to get them for free.
 
 ### Common core events
@@ -183,7 +183,7 @@ public function markReviewed(BadgeInterface $badge): void
 | `catalog_product_save_before` / `catalog_product_save_after` | `AbstractModel` save on `Product` (`_eventPrefix = 'catalog_product'`) | `product`, `data_object` |
 | `customer_register_success` | `Magento\Customer\Controller\Account\CreatePost` (storefront registration only; not REST) | `account_controller`, `customer` |
 | `checkout_cart_product_add_after` | `Magento\Checkout\Model\Cart::addProduct()` | `quote_item`, `product` |
-| `controller_action_predispatch` (+ `_<routeName>`, `_<full_action_name>` variants) | `Magento\Framework\App\FrontController` before every action | `controller_action`, `request` |
+| `controller_action_predispatch` (+ `_<routeName>`, `_<full_action_name>` variants) | `Magento\Framework\App\FrontController::dispatchPreDispatchEvents()` before every action, `AbstractAction` subclass or plain `ActionInterface` alike (2.4.4–2.4.9) | `controller_action`, `request` |
 
 `_save_after` events run inside the transaction; `_save_commit_after` runs after commit — use the latter for anything that reads the row back through another connection or enqueues work.
 
