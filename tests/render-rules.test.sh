@@ -27,4 +27,5 @@ assert_contains "$tmp/both.md" "^## Frontend — Luma" "default keeps luma"
 assert_contains "$tmp/both.md" "^## Frontend — Hyvä" "default keeps hyva"
 
 bash "$S" > /dev/null 2>&1; assert_eq "$?" "1" "missing --version exits 1"
+bash "$S" --version > /dev/null 2>&1; assert_eq "$?" "1" "dangling --version exits 1"
 report

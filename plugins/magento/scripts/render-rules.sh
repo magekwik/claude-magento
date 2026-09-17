@@ -5,9 +5,9 @@ set -euo pipefail
 version=""; hyva="true"; luma="true"
 while [ $# -gt 0 ]; do
   case "$1" in
-    --version) version="$2"; shift 2 ;;
-    --hyva)    hyva="$2";    shift 2 ;;
-    --luma)    luma="$2";    shift 2 ;;
+    --version) version="${2:-}"; shift 2 || break ;;
+    --hyva)    hyva="${2:-}";    shift 2 || break ;;
+    --luma)    luma="${2:-}";    shift 2 || break ;;
     *) echo "unknown argument: $1" >&2; exit 1 ;;
   esac
 done

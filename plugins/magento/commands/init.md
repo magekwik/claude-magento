@@ -44,7 +44,7 @@ Write this to a temp file (use the session scratchpad directory if one is listed
 
 ### Working here
 - Use the CLI prefix above for every `bin/magento` and `composer` command.
-- After schema changes: `setup:db-declaration:generate-whitelist --module-name=<Module>`, then `setup:upgrade`, then `cache:clean`. After other module/config changes: `setup:upgrade` (new modules) or `cache:clean config`.
+- After schema changes: `setup:db-declaration:generate-whitelist --module-name=<Module>`, then `setup:upgrade`, then `cache:clean`. After other module/config changes: `setup:upgrade` (new modules) or `cache:clean config compiled_config` (plugin lists live in `compiled_config`).
 - Conventions Claude follows in this repo: `.claude/rules/magento.md`. Deeper guidance lives in the `magento:*` skills (module, data, api, frontend-luma, frontend-hyva, ops, quality).
 - Before finishing PHP changes: `vendor/bin/phpcs --standard=Magento2 <changed paths>`.
 <!-- magento:end -->
