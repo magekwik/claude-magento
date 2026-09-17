@@ -32,8 +32,8 @@ Skills load automatically when relevant; commands are explicit.
 
 ## What it touches
 
-- `/magento:init` writes `CLAUDE.md` (a block between `<!-- magento:begin -->` / `<!-- magento:end -->`) and `.claude/rules/magento.md`. Nothing else.
-- `/magento:review` writes nothing. It runs `git`, and `vendor/bin/phpcs -q --standard=Magento2 --report=csv` if present. With a PR number it runs `gh`; with `--comment` it posts PR comments.
+- `/magento:init` writes `CLAUDE.md` (a block between `<!-- magento:begin -->` / `<!-- magento:end -->`; marker lines inside ``` fences are ignored, so an unbalanced fence in CLAUDE.md can hide the live block) and `.claude/rules/magento.md`. Nothing else.
+- `/magento:review` writes nothing. It runs `git`, and `vendor/bin/phpcs -q --standard=Magento2 --report=csv --basepath="$(git rev-parse --show-toplevel)"` if present. With a PR number it runs `gh`; with `--comment` it posts PR comments.
 - No hooks, no MCP servers, no network calls of its own, no credentials.
 
 ## Requirements

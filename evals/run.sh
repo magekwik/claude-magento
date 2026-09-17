@@ -16,14 +16,18 @@ else
   done
 fi
 
+# Validate every name before running anything, so a bad later argument never runs the earlier ones first.
+for name in "${scenarios[@]+"${scenarios[@]}"}"; do
+  case "$name" in
+    ''|*/*|*..*|.*) echo "bad scenario name: '$name'" >&2; exit 1;;
+  esac
+  [ -d "$ROOT/evals/scenarios/$name" ] || { echo "no such scenario: $name" >&2; exit 1; }
+done
+
 failed=0
 if [ "${#scenarios[@]}" -gt 0 ]; then
   for name in "${scenarios[@]}"; do
-    case "$name" in
-      ''|*/*|*..*|.*) echo "bad scenario name: '$name'" >&2; exit 1;;
-    esac
     dir="$ROOT/evals/scenarios/$name"
-    [ -d "$dir" ] || { echo "no such scenario: $name" >&2; exit 1; }
     [ -f "$dir/prompt.md" ] || { echo "SKIP $name (no prompt.md)"; continue; }
     fixture=$(sed -n 's/^fixture: *//p' "$dir/prompt.md" | head -1)
     prompt=$(awk 'BEGIN{c=0} /^---$/ && c<2 {c++; next} c>=2 {print}' "$dir/prompt.md")

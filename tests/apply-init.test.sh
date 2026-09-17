@@ -85,4 +85,15 @@ assert_contains "$tmp/i/CLAUDE.md" "^example$" "I fenced example still present"
 assert_eq "$(grep -c 'magento:begin' "$tmp/i/CLAUDE.md")" "2" "I two begin markers (fenced + appended)"
 assert_contains "$tmp/i/CLAUDE.md" "^More text.$" "I trailing text preserved"
 
+# J. END marker before BEGIN (no closing END): not a live block — must not "update" (which would swallow
+#    everything after the stray BEGIN); append instead and lose no original line
+mkdir "$tmp/j"
+printf '<!-- magento:end -->\nStray text between the markers.\n<!-- magento:begin -->\nText after the stray begin.\n' > "$tmp/j/CLAUDE.md"
+bash "$S" --block "$tmp/block1" --rules "$tmp/rules1" --root "$tmp/j" > "$tmp/j.out" 2>&1; rc=$?
+assert_not_contains "$tmp/j.out" "^CLAUDE.md: updated$" "J END-before-BEGIN is not treated as a live block"
+if [ "$rc" -eq 0 ]; then assert_contains "$tmp/j.out" "^CLAUDE.md: appended$" "J appended"; else assert_contains "$tmp/j.out" "CLAUDE.md" "J non-zero exit names CLAUDE.md"; fi
+assert_contains "$tmp/j/CLAUDE.md" "^Stray text between the markers.$" "J text between stray markers preserved"
+assert_contains "$tmp/j/CLAUDE.md" "^Text after the stray begin.$" "J text after stray begin preserved"
+assert_eq "$(grep -c '^<!-- magento:end -->$' "$tmp/j/CLAUDE.md")" "2" "J stray END kept plus appended END"
+
 report

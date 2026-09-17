@@ -176,7 +176,7 @@ This must be in the **global** `etc/di.xml`. If the command's constructor pulls 
 | New factory/proxy/interceptor reference | Nothing — generated on the fly under `generated/code/` | `setup:di:compile` (production does not generate at runtime) |
 | New module | `bin/magento setup:upgrade` | `setup:upgrade` then `setup:di:compile` |
 
-- `setup:di:compile` is *only* required in production mode; running it in developer mode is harmless but pointless. `deploy:mode:set production` runs it for you.
+- `setup:di:compile` is *only* required in production mode; running it in developer mode is pointless and leaves `generated/metadata` behind, after which di.xml edits are ignored until you delete `generated/metadata` (the object manager switches to the compiled DI whenever `generated/metadata/global.php` exists, regardless of `MAGE_MODE` — see `magento:ops`). `deploy:mode:set production` runs it for you.
 - After switching production → developer, delete `generated/code` and `generated/metadata` so stale compiled classes do not shadow edits.
 - Compile errors like *"Missing required argument $x of Acme\..."* or *"Type Error occurred when creating object"* mean a constructor parameter has no preference, no `di.xml` argument and no default — fix the DI, do not add `ObjectManager` calls (A1).
 

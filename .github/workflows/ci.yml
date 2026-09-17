@@ -21,7 +21,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y shellcheck
       - run: claude plugin validate ./plugins/magento --strict
       - run: claude plugin validate .
-      - run: shellcheck -x -P SCRIPTDIR -e SC2015 -e SC2016 plugins/magento/scripts/*.sh evals/run.sh tests/*.sh
+      - run: shellcheck -x -P SCRIPTDIR -e SC2015 -e SC2016 plugins/magento/scripts/*.sh evals/run.sh tests/*.sh evals/scenarios/*/*.sh
       - run: bash tests/run.sh
       - name: size limits
         run: |
@@ -47,4 +47,6 @@ jobs:
         with:
           node-version: 22
       - run: npm install -g @anthropic-ai/claude-code
-      - run: bash evals/run.sh ${{ github.event.inputs.scenarios }}
+      - env: { SCENARIOS: "${{ github.event.inputs.scenarios }}" }
+        # unquoted on purpose: the input is space-separated scenario names, word-split into arguments
+        run: bash evals/run.sh $SCENARIOS

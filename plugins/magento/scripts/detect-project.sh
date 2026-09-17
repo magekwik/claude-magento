@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Prints one JSON object describing a Magento 2 project. No jq dependency.
 # Usage: detect-project.sh [root]   Exit 2 if root is not a Magento project.
+# env: warden (.warden/ or .env with WARDEN_ENV_TYPE=) > ddev (.ddev/) > docker-magento
+#      (compose file + bin/clinotty, Mark Shust's wrapper) > docker (compose file) > native.
 set -euo pipefail
 
 root="${1:-.}"
@@ -64,12 +66,13 @@ if { [ -f composer.lock ] && grep -q '"name": *"hyva-themes/' composer.lock; } |
 
 # --- dev environment ---
 env="native"
-if [ -d .warden ]; then env="warden"
+if [ -d .warden ] || { [ -f .env ] && grep -q '^WARDEN_ENV_TYPE=' .env; }; then env="warden"
 elif [ -d .ddev ]; then env="ddev"
 else
   for f in docker-compose*.yml compose*.yml compose*.yaml docker-compose*.yaml; do
     [ -f "$f" ] && env="docker" && break
   done
+  if [ "$env" = "docker" ] && [ -f bin/clinotty ]; then env="docker-magento"; fi
 fi
 
 # --- tooling ---

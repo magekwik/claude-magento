@@ -21,11 +21,11 @@ cd "$root"
 BEGIN='<!-- magento:begin -->'
 END='<!-- magento:end -->'
 
-has_live_block() { # true iff CLAUDE.md has both markers as whole lines OUTSIDE any fence
+has_live_block() { # true iff CLAUDE.md has both markers as whole lines OUTSIDE any fence, END after BEGIN
   awk -v b="$BEGIN" -v e="$END" '
     /^```/ { fence = !fence; next }
     !fence && $0 == b { sb = 1 }
-    !fence && $0 == e { se = 1 }
+    !fence && $0 == e && sb { se = 1 }
     END { exit (sb && se) ? 0 : 1 }
   ' CLAUDE.md
 }

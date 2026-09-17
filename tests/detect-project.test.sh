@@ -44,6 +44,11 @@ cp -R "$ROOT/evals/fixtures/luma-skeleton" "$tmp/warden"; mkdir "$tmp/warden/.wa
 assert_eq "$(bash "$S" "$tmp/warden" | python3 -c 'import json,sys;print(json.load(sys.stdin)["env"])')" "warden" "warden env"
 cp -R "$ROOT/evals/fixtures/luma-skeleton" "$tmp/docker"; touch "$tmp/docker/docker-compose.yml"
 assert_eq "$(bash "$S" "$tmp/docker" | python3 -c 'import json,sys;print(json.load(sys.stdin)["env"])')" "docker" "docker env"
+cp -R "$ROOT/evals/fixtures/luma-skeleton" "$tmp/warden-env"; printf 'WARDEN_ENV_NAME=acme\nWARDEN_ENV_TYPE=magento2\n' > "$tmp/warden-env/.env"
+assert_eq "$(bash "$S" "$tmp/warden-env" | python3 -c 'import json,sys;print(json.load(sys.stdin)["env"])')" "warden" "warden env from .env only"
+cp -R "$ROOT/evals/fixtures/luma-skeleton" "$tmp/docker-magento"; touch "$tmp/docker-magento/compose.yaml"
+printf '#!/usr/bin/env bash\nexec docker compose exec -T phpfpm "$@"\n' > "$tmp/docker-magento/bin/clinotty"; chmod +x "$tmp/docker-magento/bin/clinotty"
+assert_eq "$(bash "$S" "$tmp/docker-magento" | python3 -c 'import json,sys;print(json.load(sys.stdin)["env"])')" "docker-magento" "docker-magento env (compose.yaml + bin/clinotty)"
 cp -R "$ROOT/evals/fixtures/luma-skeleton" "$tmp/noenv"; rm "$tmp/noenv/app/etc/env.php"
 assert_eq "$(bash "$S" "$tmp/noenv" | python3 -c 'import json,sys;print(json.load(sys.stdin)["mode"])')" "None" "missing env.php -> null mode"
 

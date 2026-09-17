@@ -5,7 +5,7 @@ description: The Magento 2 rulebook — architecture, security, performance, Lum
 
 # Magento 2 conventions
 
-Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.4. Rules are numbered so reviews and other skills can cite them. Sniff names are from `magento/magento-coding-standard` (the `Magento2` ruleset); `PHPCS: —` means no sniff covers the rule and review must catch it by hand.
+Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release). Rules are numbered so reviews and other skills can cite them. Sniff names are from `magento/magento-coding-standard` (the `Magento2` ruleset); `PHPCS: —` means no sniff covers the rule and review must catch it by hand.
 
 ## Architecture
 

@@ -149,7 +149,7 @@ Framework-generated: no route → 404 `Request does not match any route.`; ACL f
 ## Caches and workflow
 
 - `webapi.xml` (routes, ACL refs, parameters) → `config_webservice` cache type ("Web Services Configuration"). Interface reflection (types, `@return`, parameter lists) → `reflection`. `acl.xml`, `di.xml` → `config`.
-- After any change: `bin/magento cache:clean config config_webservice reflection`; production mode additionally `bin/magento setup:di:compile` for `di.xml`. New module: `bin/magento module:enable Acme_Catalog && bin/magento setup:upgrade`.
+- After any change: `bin/magento cache:clean config compiled_config config_webservice reflection`; production mode additionally `bin/magento setup:di:compile` for `di.xml`. New module: `bin/magento module:enable Acme_Catalog && bin/magento setup:upgrade`.
 - Smoke test order: an unauthenticated call (expect 401 `The consumer isn't authorized…`; a 404 `Request does not match any route.` means the route is not loaded — `cache:clean config_webservice`, module enabled?), then `GET /rest/all/schema?services=acmeCatalogBrandRepositoryV1` with the token (route and types as expected?), then the real call.
 - Integration tests: `Magento\TestFramework\TestCase\WebapiAbstract` with `_webApiCall()` drives the real REST and SOAP stacks (Q3); unit-test the service class like any other class.
 

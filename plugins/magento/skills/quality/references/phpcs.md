@@ -31,10 +31,10 @@ PHPCS only knows a standard that is listed in its `installed_paths` config (`ven
 The review baseline (Q1) and the command the `magento:code-reviewer` agent executes:
 
 ```bash
-vendor/bin/phpcs -q --standard=Magento2 --report=csv <paths>
+vendor/bin/phpcs -q --standard=Magento2 --report=csv --basepath="$(git rev-parse --show-toplevel)" <paths>
 ```
 
-Human-readable variant: `vendor/bin/phpcs -q --standard=Magento2 --report=full <paths>` (add `-s` to print the sniff code under each message, `--basepath=.` to shorten paths, `--colors`; drop `-q` and add `-p` for a progress line). `<paths>` are files or directories — `app/code/Acme/Catalog`, a list of changed files, or nothing at all when a `phpcs.xml.dist` names `<file>` entries.
+`--basepath` makes the File column repo-relative (PHPCS prints absolute paths otherwise), so rows dedupe against the reviewer's own `file:line` findings and `--comment` posts a path GitHub accepts. Human-readable variant: `vendor/bin/phpcs -q --standard=Magento2 --report=full --basepath=. <paths>` from the project root (add `-s` to print the sniff code under each message, `--colors`; drop `-q` and add `-p` for a progress line). `<paths>` are files or directories — `app/code/Acme/Catalog`, a list of changed files, or nothing at all when a `phpcs.xml.dist` names `<file>` entries.
 
 Useful options:
 
