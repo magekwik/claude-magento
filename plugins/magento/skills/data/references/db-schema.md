@@ -63,7 +63,7 @@ Common attributes on every type: `name` (required, ≤ 64 characters), `comment`
 | `xsi:type` | Extra attributes | Notes |
 |---|---|---|
 | `int`, `smallint`, `bigint`, `tinyint` | `unsigned`, `identity` (auto-increment), `padding` | `default` is digits or `null`; `padding` is the integer display width (2–255; deprecated in MySQL 8, leave it out) |
-| `decimal`, `float`, `double`, `real` | `precision`, `scale`, `unsigned` | `precision` ≥ `scale` or validation fails; money is `decimal` — core uses `precision="20" scale="4"` for order totals and `20`/`6` for product prices |
+| `decimal`, `float`, `double` | `precision`, `scale`, `unsigned` | `precision` ≥ `scale` or validation fails; money is `decimal` — core uses `precision="20" scale="4"` for order totals and `20`/`6` for product prices |
 | `varchar`, `char` | `length` (varchar ≤ 1024 in the XSD) | `varchar` `length="255"` for names and codes |
 | `text`, `mediumtext`, `longtext` | — | no `default`, no `length` |
 | `json` | — | native JSON column; encode and decode through `SerializerInterface` (S5) |
@@ -172,7 +172,7 @@ Also relevant: `setup:db-declaration:generate-whitelist` (above), `setup:db-sche
 | Rename a table | new `<table name="new" onCreate="migrateDataFromAnotherTable(old)">`, delete the old `<table>`; regenerate whitelist | copied row by row; not combined with column renames; slow on big tables — for those dump with `--safe-mode=1` and reload in a patch |
 | Drop a column/index/FK/table | delete the element; it must be whitelisted | **lost** — `--safe-mode=1` if you may need it |
 | Remove an element another module declared | redeclare it with `disabled="true"` | lost; only for modules that depend on yours, never core |
-| Split a foreign key's `onDelete` | edit `onDelete` — it is dropped and re-added | kept |
+| Change a foreign key's `onDelete` | edit `onDelete` — it is dropped and re-added | kept |
 
 Backward compatibility (Q4 spirit): within a release line only add columns (nullable or defaulted), add indexes, and widen types. Renames and drops are breaking changes for anyone who joined your table; schedule them for a major version and announce them.
 

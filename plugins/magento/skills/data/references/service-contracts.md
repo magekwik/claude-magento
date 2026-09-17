@@ -79,31 +79,19 @@ use Magento\Framework\Api\SearchCriteriaInterface;
  */
 interface BrandRepositoryInterface
 {
-    /**
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
-     */
     public function save(BrandInterface $brand): BrandInterface;
 
-    /**
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     */
     public function getById(int $entityId): BrandInterface;
 
     public function getList(SearchCriteriaInterface $searchCriteria): BrandSearchResultsInterface;
 
-    /**
-     * @throws \Magento\Framework\Exception\CouldNotDeleteException
-     */
     public function delete(BrandInterface $brand): bool;
 
-    /**
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     */
     public function deleteById(int $entityId): bool;
 }
 ```
 
-`save` creates when the id is empty and updates otherwise and returns the saved entity; `getById` throws `NoSuchEntityException` rather than returning null; `getList` takes `SearchCriteriaInterface` and returns the search results interface. Operations that are not CRUD (`assignToProduct`, `publish`) go in a separate `Api/BrandManagementInterface`. Repositories are stateless: no memoised results across calls unless keyed by id and invalidated on save/delete.
+Document the exceptions with `@throws` docblocks (`save` → `CouldNotSaveException`, `getById`/`deleteById` → `NoSuchEntityException`, `delete` → `CouldNotDeleteException`); the web API turns them into HTTP errors. `save` creates when the id is empty and updates otherwise and returns the saved entity; `getById` throws rather than returning null; `getList` takes `SearchCriteriaInterface` and returns the search results interface. Operations that are not CRUD (`assignToProduct`, `publish`) go in a separate `Api/BrandManagementInterface`. Repositories are stateless: no memoised results across calls unless keyed by id and invalidated on save/delete.
 
 ## Model, resource model, collection
 
@@ -196,7 +184,7 @@ class Collection extends AbstractCollection
 
 ### Extensible entity
 
-If other modules must be able to attach data to your entity, extend `Magento\Framework\Model\AbstractExtensibleModel` instead (its constructor adds `ExtensionAttributesFactory $extensionFactory` and `AttributeValueFactory $customAttributeFactory` after `Context` and `Registry`), have `BrandInterface` extend `Magento\Framework\Api\ExtensibleDataInterface`, and declare on both `getExtensionAttributes(): ?BrandExtensionInterface` (implemented as `return $this->_getExtensionAttributes();`) and `setExtensionAttributes(BrandExtensionInterface $extensionAttributes): self` (`$this->_setExtensionAttributes($extensionAttributes); return $this;`). `Acme\Catalog\Api\Data\BrandExtensionInterface`, `BrandExtension` and `BrandExtensionFactory` are generated (developer mode on demand, `setup:di:compile` for production) from every module's `extension_attributes.xml` entries with `for="Acme\Catalog\Api\Data\BrandInterface"`; the interface is empty until someone declares an attribute.
+If other modules must be able to attach data to your entity, extend `Magento\Framework\Model\AbstractExtensibleModel` instead, have `BrandInterface` extend `Magento\Framework\Api\ExtensibleDataInterface`, and declare on both `getExtensionAttributes(): ?BrandExtensionInterface` (`return $this->_getExtensionAttributes();`) and `setExtensionAttributes(BrandExtensionInterface $extensionAttributes): self` (`$this->_setExtensionAttributes(...)`). `BrandExtensionInterface`, `BrandExtension` and `BrandExtensionFactory` are generated from every module's `extension_attributes.xml` entries `for="Acme\Catalog\Api\Data\BrandInterface"` and are empty until someone declares an attribute.
 
 ## Repository implementation
 
@@ -282,15 +270,31 @@ class BrandRepository implements BrandRepositoryInterface
 ```
 
 - `BrandInterfaceFactory` and `BrandSearchResultsInterfaceFactory` are generated factories (A9); they create whatever `di.xml` prefers for the interface. `resource->save()`/`load()`/`delete()` take the model (`BrandInterface` is the model via the preference) — if you accept other implementations, copy the data across with `DataObjectHelper::populateWithArray` first.
-- `CollectionProcessorInterface` is the framework's default chain (filters → sorting → pagination) and maps every `SearchCriteria` field name straight to a column; for a joined or renamed field configure a virtual type of `Magento\Framework\Api\SearchCriteria\CollectionProcessor\FilterProcessor` with `fieldMapping`/`customFilters` (and `SortingProcessor` with `fieldMapping`) in `di.xml` and inject it instead. `getTotalCount()` is `getSize()` — a `COUNT(*)` of the filtered query, independent of paging (P2); never fetch the collection to count it.
+- `CollectionProcessorInterface` is the framework's default chain (filters → sorting → pagination) and maps every `SearchCriteria` field name straight to a column. For a joined or renamed field do what core does: declare a virtual type of `Magento\Framework\Api\SearchCriteria\CollectionProcessor\FilterProcessor` with `fieldMapping`/`customFilters` (and of `SortingProcessor` with `fieldMapping`), wrap them in a virtual type of `Magento\Framework\Api\SearchCriteria\CollectionProcessor` whose `processors` array lists your `filters`, `sorting` and the stock `pagination` processor, and pass that as the repository's `collectionProcessor` argument in `di.xml`. `getTotalCount()` is `getSize()` — a `COUNT(*)` of the filtered query, independent of paging (P2); never fetch the collection to count it.
 
-`etc/di.xml` — `Magento\Framework\Api\SearchResults` implements `SearchResultsInterface` generically and is the usual target for the search results preference:
+`Model/BrandSearchResults.php` — `Magento\Framework\Api\SearchResults` implements `SearchResultsInterface` generically, but `getList()` has a native return type, so the preference must point at a subclass that also implements *your* interface (as core does with `Magento\Cms\Model\BlockSearchResults`):
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace Acme\Catalog\Model;
+
+use Acme\Catalog\Api\Data\BrandSearchResultsInterface;
+use Magento\Framework\Api\SearchResults;
+
+class BrandSearchResults extends SearchResults implements BrandSearchResultsInterface
+{
+}
+```
+
+`etc/di.xml`:
 
 ```xml
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="Acme\Catalog\Api\Data\BrandInterface" type="Acme\Catalog\Model\Brand"/>
-    <preference for="Acme\Catalog\Api\Data\BrandSearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
+    <preference for="Acme\Catalog\Api\Data\BrandSearchResultsInterface" type="Acme\Catalog\Model\BrandSearchResults"/>
     <preference for="Acme\Catalog\Api\BrandRepositoryInterface" type="Acme\Catalog\Model\BrandRepository"/>
 </config>
 ```
@@ -316,11 +320,9 @@ $brands = $this->brandRepository->getList($searchCriteria)->getItems();
 ```
 
 - `SearchCriteriaBuilder` and `SortOrderBuilder` are injected, not shared instances: `create()` resets the builder, so build one criteria per query and never keep a half-built builder in a property.
-- Each `addFilter()` becomes its own filter group, and groups are **AND**ed. For **OR**, pass several `Filter` objects (from `FilterBuilder`) to one `addFilters([...])` call: `(url like %x OR store_id eq 1) AND (url_type eq 1)`.
-- Condition types: `eq`, `neq`, `like`, `nlike`, `in`, `nin`, `gt`, `lt`, `gteq`, `lteq`, `from`, `to`, `finset`, `nfinset`, `null`, `notnull`, `regexp`. `in`/`nin` take an array or a comma-separated string.
-- Always `setPageSize()` (P2): with no page size the collection runs without `LIMIT`. Loop pages with `getTotalCount()` / page size when you must process everything.
-- One entity: `getById()` inside `try { } catch (NoSuchEntityException $e) { }`. Many entities: never `getById()` in a loop (P1) — one `getList()` with an `in` filter.
-- `ProductRepositoryInterface::getList()` is a database query on the product collection; storefront search, layered navigation and the GraphQL `products` query go through Elasticsearch/OpenSearch instead and follow the engine's paging limits. Use the repository for integrations and admin tooling, not to render catalogue listings.
+- Each `addFilter()` becomes its own filter group, and groups are **AND**ed. For **OR**, pass several `Filter` objects (from `FilterBuilder`) to one `addFilters([...])` call: `(url like %x OR store_id eq 1) AND (url_type eq 1)`. Condition types: `eq`, `neq`, `like`, `nlike`, `in`, `nin`, `gt`, `lt`, `gteq`, `lteq`, `from`, `to`, `finset`, `nfinset`, `null`, `notnull`, `regexp` (`in`/`nin` take an array or a comma-separated string).
+- Always `setPageSize()` (P2): with no page size the collection runs without `LIMIT`. Loop pages with `getTotalCount()` / page size when you must process everything. One entity: `getById()` inside `try { } catch (NoSuchEntityException $e) { }`; many: never `getById()` in a loop (P1) — one `getList()` with an `in` filter.
+- `ProductRepositoryInterface::getList()` is a database query on the product collection; storefront search, layered navigation and the GraphQL `products` query go through Elasticsearch/OpenSearch instead. Use the repository for integrations and admin tooling, not to render catalogue listings.
 
 ## Extension attributes
 

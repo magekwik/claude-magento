@@ -126,7 +126,7 @@ class AddBrandAttribute implements DataPatchInterface, PatchRevertableInterface
             'type' => 'varchar',
             'label' => 'Brand',
             'input' => 'text',
-            'group' => 'General',
+            'group' => 'Product Details',
             'global' => ScopedAttributeInterface::SCOPE_STORE,
             'required' => false,
             'user_defined' => true,
@@ -160,7 +160,7 @@ class AddBrandAttribute implements DataPatchInterface, PatchRevertableInterface
 }
 ```
 
-Why this shape: the value lands in `catalog_product_entity_varchar` keyed by product, attribute and store, so it is store-scoped (`SCOPE_STORE`), editable in the admin form (`visible`; `group` creates a *General* tab in every attribute set — name an existing tab such as `Product Details` to land there instead), returned as `custom_attributes` by `GET /V1/products/:sku`, loaded in listings (`used_in_product_listing`) and searchable after a reindex — none of which a raw column gives you. The patch constructor takes `ModuleDataSetupInterface` under that exact parameter name (the applier injects the setup-bound instance by name) and `EavSetupFactory` (never `EavSetup` directly); `startSetup()`/`endSetup()` disable foreign-key checks and set the SQL mode around the writes; `revert()` mirrors `apply()` for `module:uninstall`. Apply with `bin/magento setup:upgrade && bin/magento cache:clean && bin/magento indexer:reindex catalogsearch_fulltext`. Read it with `$product->getData('brand')` or `$product->getCustomAttribute('brand')?->getValue()`.
+Why this shape: the value lands in `catalog_product_entity_varchar` keyed by product, attribute and store, so it is store-scoped (`SCOPE_STORE`), editable in the admin form (`visible`; `group` = `Product Details` resolves by group code `product-details` to the default tab of every attribute set — do **not** write `General`: `EavSetup` maps that name through `default_id` = 1 onto the same tab and renames it "General" in every set), returned as `custom_attributes` by `GET /V1/products/:sku`, loaded in listings (`used_in_product_listing`) and searchable after a reindex — none of which a raw column gives you. The patch constructor takes `ModuleDataSetupInterface` under that exact parameter name (the applier injects the setup-bound instance by name) and `EavSetupFactory` (never `EavSetup` directly); `startSetup()`/`endSetup()` disable foreign-key checks and set the SQL mode around the writes; `revert()` mirrors `apply()` for `module:uninstall`. Apply with `bin/magento setup:upgrade && bin/magento cache:clean && bin/magento indexer:reindex catalogsearch_fulltext`. Read it with `$product->getData('brand')` or `$product->getCustomAttribute('brand')?->getValue()`.
 
 ## Routing table
 

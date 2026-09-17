@@ -43,7 +43,7 @@ Base keys (every entity type → `eav_attribute`):
 | `input` | `frontend_input` | `text` | admin form control: `text`, `textarea`, `select`, `multiselect`, `boolean`, `date`, `datetime`, `price`, `weight`, `media_image`, `hidden`, `gallery`. The admin's *Text Editor* type is not a stored value — it is `textarea` plus `wysiwyg_enabled` |
 | `label` | `frontend_label` | — | admin label; translate in `i18n` by the label string (Q5) |
 | `required` | `is_required` | **1** | pass `false` explicitly for optional fields — the default makes every existing product invalid in the form |
-| `user_defined` | `is_user_defined` | 0 | 1 = merchant may edit/delete it in *Stores > Attributes* and it is added to sets only when `group` is given; 0 = system attribute, no Delete button, added to every set (into `group`, or each set's first group when none is given) |
+| `user_defined` | `is_user_defined` | 0 | 1 = merchant may edit/delete it in *Stores > Attributes* and it is added to sets only when `group` is given; 0 = system attribute, no Delete button, added to every set (into `group`, or the group with `default_id` = 1 — *Product Details* — when none is given) |
 | `source` | `source_model` | — | class providing options: `Magento\Eav\Model\Entity\Attribute\Source\Boolean` (Yes/No), `...\Source\Table` (options from `eav_attribute_option`, the default for `select`/`multiselect` with `option`), or your own `AbstractSource` subclass with `getAllOptions()` |
 | `backend` | `backend_model` | — | value handling: `Magento\Eav\Model\Entity\Attribute\Backend\ArrayBackend` (required for `multiselect` — stores `1,4,7`), `...\Backend\Datetime`, `Magento\Catalog\Model\Product\Attribute\Backend\Price` for `price` |
 | `frontend` | `frontend_model` | — | rendering helper; rarely needed (`Magento\Eav\Model\Entity\Attribute\Frontend\Datetime`) |
@@ -53,7 +53,7 @@ Base keys (every entity type → `eav_attribute`):
 | `note` | `note` | — | help text under the field |
 | `sort_order` | `eav_entity_attribute.sort_order` | — | position inside the group |
 | `option` | option tables | — | `['values' => ['Red', 'Green']]` creates options (store 0), skipping values that already exist |
-| `group` | `eav_entity_attribute` | — | attribute group (= admin form tab) name, created in every attribute set if missing. The default product set has `Product Details`, `Content`, `Images`, `Search Engine Optimization`, `Advanced Pricing`, `Design`, `Schedule Design Update`, `Autosettings`; `'group' => 'General'` (the docs' habit) therefore adds a new *General* tab — fine if you want your own tab, otherwise name an existing one. Categories: `General Information`, `Display Settings`, `Custom Design` |
+| `group` | `eav_entity_attribute` | — | attribute group (= admin form tab) name, matched by its code (`Product Details` → `product-details`) in every attribute set and created there if missing. The default product set has `Product Details` (the default landing tab, `default_id` = 1), `Content`, `Images`, `Search Engine Optimization`, `Advanced Pricing`, `Design`, `Schedule Design Update`, `Autosettings`. **Never pass `General`**: `EavSetup` maps the code `general` to `default_id` = 1, so it resolves to *Product Details* and **renames that tab to "General" in every set**. Any other unused name creates a genuinely new tab. Categories: `General Information`, `Display Settings`, `Custom Design` |
 
 Catalog keys (product and category → `catalog_eav_attribute`):
 
@@ -80,7 +80,7 @@ Customer keys (customer and address → `customer_eav_attribute`): `system` (`is
 
 ## Product attribute variants
 
-Select with options and a Yes/No flag, added to the `General` group of every set:
+Select with options and a Yes/No flag, added to the `Product Details` tab of every set:
 
 ```php
 $eavSetup->addAttribute(Product::ENTITY, 'acme_material', [
@@ -89,7 +89,7 @@ $eavSetup->addAttribute(Product::ENTITY, 'acme_material', [
     'input' => 'select',
     'source' => \Magento\Eav\Model\Entity\Attribute\Source\Table::class,
     'option' => ['values' => ['Cotton', 'Linen', 'Wool']],
-    'group' => 'General',
+    'group' => 'Product Details',
     'global' => ScopedAttributeInterface::SCOPE_GLOBAL,
     'required' => false,
     'user_defined' => true,
@@ -104,7 +104,7 @@ $eavSetup->addAttribute(Product::ENTITY, 'acme_is_organic', [
     'input' => 'boolean',
     'source' => \Magento\Eav\Model\Entity\Attribute\Source\Boolean::class,
     'default' => '0',
-    'group' => 'General',
+    'group' => 'Product Details',
     'required' => false,
     'user_defined' => true,
 ]);
@@ -120,7 +120,7 @@ Later changes go through `updateAttribute(Product::ENTITY, 'acme_material', 'is_
 
 ```php
 $setId = $eavSetup->getAttributeSetId(Product::ENTITY, 'Bag'); // by name or id; getDefaultAttributeSetId() for "Default"
-$groupId = $eavSetup->getAttributeGroupId(Product::ENTITY, $setId, 'General');
+$groupId = $eavSetup->getAttributeGroupId(Product::ENTITY, $setId, 'Product Details');
 $eavSetup->addAttributeToGroup(Product::ENTITY, $setId, $groupId, 'acme_material', 60);
 ```
 
@@ -197,7 +197,7 @@ class AddCustomerLoyaltyIdAttribute implements DataPatchInterface
 
 - `system => false` and `user_defined => true` together make it a real custom attribute: it is returned in `custom_attributes` by the customer API (`system` attributes are not) and editable in admin.
 - Customers have exactly one attribute set (`ATTRIBUTE_SET_ID_CUSTOMER` = 1; addresses `AddressMetadataInterface::ATTRIBUTE_SET_ID_ADDRESS` = 2); `addAttributeToSet` with group `null` uses the default group.
-- `used_in_forms` decides which forms *accept, validate and save* the attribute; saving it goes through the customer attribute resource model, which rewrites `customer_form_attribute`. Form codes: customer `adminhtml_customer`, `customer_account_create`, `customer_account_edit`, `adminhtml_checkout`; address `adminhtml_customer_address`, `customer_address_edit`, `customer_register_address`. The admin customer form renders every attribute with `visible` = 1 automatically; storefront templates do not — the register/edit forms need the input added in the theme (`magento:frontend-luma` / `magento:frontend-hyva`), and the value then round-trips through `CustomerInterface::getCustomAttribute('acme_loyalty_id')`.
+- `used_in_forms` decides which forms *accept, validate and save* the attribute; saving it goes through the customer attribute resource model, which rewrites `customer_form_attribute`. Form codes: customer `adminhtml_customer`, `customer_account_create`, `customer_account_edit`, `checkout_register`, `adminhtml_checkout`; address `adminhtml_customer_address`, `customer_address_edit`, `customer_register_address`. The admin customer form renders every attribute with `visible` = 1 automatically; storefront templates do not — the register/edit forms need the input added in the theme (`magento:frontend-luma` / `magento:frontend-hyva`), and the value then round-trips through `CustomerInterface::getCustomAttribute('acme_loyalty_id')`.
 - Grid flags need `bin/magento indexer:reindex customer_grid` to show existing customers' values.
 - Address attributes: `AddressMetadataInterface::ENTITY_TYPE_ADDRESS`, the address forms above, and the quote/order address copy needs `fieldset.xml` entries — out of scope here.
 
