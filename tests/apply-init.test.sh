@@ -75,4 +75,14 @@ fi
 bash "$S" --block > "$tmp/h.out" 2>"$tmp/h.err"; assert_eq "$?" "1" "H usage exit"
 assert_contains "$tmp/h.err" "usage:" "H stderr usage"
 
+# I. markers that exist ONLY inside a fence (no live block) must APPEND, not update
+mkdir "$tmp/i"
+printf '# Heading\n\n```\n<!-- magento:begin -->\nexample\n<!-- magento:end -->\n```\n\nMore text.\n' > "$tmp/i/CLAUDE.md"
+bash "$S" --block "$tmp/block1" --rules "$tmp/rules1" --root "$tmp/i" > "$tmp/i.out"
+assert_contains "$tmp/i.out" "^CLAUDE.md: appended$" "I appended (fence-only markers)"
+assert_contains "$tmp/i/CLAUDE.md" "edition: open-source" "I new block present"
+assert_contains "$tmp/i/CLAUDE.md" "^example$" "I fenced example still present"
+assert_eq "$(grep -c 'magento:begin' "$tmp/i/CLAUDE.md")" "2" "I two begin markers (fenced + appended)"
+assert_contains "$tmp/i/CLAUDE.md" "^More text.$" "I trailing text preserved"
+
 report

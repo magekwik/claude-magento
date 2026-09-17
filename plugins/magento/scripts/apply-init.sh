@@ -21,6 +21,15 @@ cd "$root"
 BEGIN='<!-- magento:begin -->'
 END='<!-- magento:end -->'
 
+has_live_block() { # true iff CLAUDE.md has both markers as whole lines OUTSIDE any fence
+  awk -v b="$BEGIN" -v e="$END" '
+    /^```/ { fence = !fence; next }
+    !fence && $0 == b { sb = 1 }
+    !fence && $0 == e { se = 1 }
+    END { exit (sb && se) ? 0 : 1 }
+  ' CLAUDE.md
+}
+
 # --- CLAUDE.md ---
 if [ ! -f CLAUDE.md ]; then
   if cat "$block" > CLAUDE.md; then
@@ -29,10 +38,12 @@ if [ ! -f CLAUDE.md ]; then
     echo "CLAUDE.md: create failed" >&2
     exit 1
   fi
-elif grep -qxF "$BEGIN" CLAUDE.md && grep -qxF "$END" CLAUDE.md; then
+elif has_live_block; then
   # Marker lines must match the WHOLE line (not just a prefix) and are only
   # "live" outside a fenced code block (``` ... ```), so an illustrative
   # example of the markers inside a fence is never mistaken for the real one.
+  # has_live_block above uses the identical fence-aware rule to decide whether
+  # this (update) branch or the append branch below applies.
   if awk -v blockfile="$block" -v b="$BEGIN" -v e="$END" '
     BEGIN { fence = 0; skipping = 0 }
     {
