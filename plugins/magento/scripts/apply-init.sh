@@ -6,9 +6,9 @@ set -euo pipefail
 block=""; rules=""; root="."
 while [ $# -gt 0 ]; do
   case "$1" in
-    --block) block="$2"; shift 2 ;;
-    --rules) rules="$2"; shift 2 ;;
-    --root)  root="$2";  shift 2 ;;
+    --block) block="${2:-}"; shift 2 || break ;;
+    --rules) rules="${2:-}"; shift 2 || break ;;
+    --root)  root="${2:-}";  shift 2 || break ;;
     *) echo "unknown argument: $1" >&2; exit 1 ;;
   esac
 done
@@ -23,18 +23,40 @@ END='<!-- magento:end -->'
 
 # --- CLAUDE.md ---
 if [ ! -f CLAUDE.md ]; then
-  cat "$block" > CLAUDE.md
-  echo "CLAUDE.md: created"
-elif grep -qF "$BEGIN" CLAUDE.md && grep -qF "$END" CLAUDE.md; then
-  awk -v blockfile="$block" -v b="$BEGIN" -v e="$END" '
-    index($0, b) == 1 { while ((getline line < blockfile) > 0) print line; skipping = 1; next }
-    index($0, e) == 1 { skipping = 0; next }
-    !skipping { print }
-  ' CLAUDE.md > CLAUDE.md.tmp && mv CLAUDE.md.tmp CLAUDE.md
-  echo "CLAUDE.md: updated"
+  if cat "$block" > CLAUDE.md; then
+    echo "CLAUDE.md: created"
+  else
+    echo "CLAUDE.md: create failed" >&2
+    exit 1
+  fi
+elif grep -qxF "$BEGIN" CLAUDE.md && grep -qxF "$END" CLAUDE.md; then
+  # Marker lines must match the WHOLE line (not just a prefix) and are only
+  # "live" outside a fenced code block (``` ... ```), so an illustrative
+  # example of the markers inside a fence is never mistaken for the real one.
+  if awk -v blockfile="$block" -v b="$BEGIN" -v e="$END" '
+    BEGIN { fence = 0; skipping = 0 }
+    {
+      if ($0 ~ /^```/) { fence = !fence }
+      else if (!fence) {
+        if (!skipping && $0 == b) { while ((getline line < blockfile) > 0) print line; skipping = 1; next }
+        if (skipping && $0 == e) { skipping = 0; next }
+      }
+      if (!skipping) print
+    }
+  ' CLAUDE.md > CLAUDE.md.tmp && mv CLAUDE.md.tmp CLAUDE.md; then
+    echo "CLAUDE.md: updated"
+  else
+    rm -f CLAUDE.md.tmp
+    echo "CLAUDE.md: update failed" >&2
+    exit 1
+  fi
 else
-  { printf '\n'; cat "$block"; } >> CLAUDE.md
-  echo "CLAUDE.md: appended"
+  if { printf '\n'; cat "$block"; } >> CLAUDE.md; then
+    echo "CLAUDE.md: appended"
+  else
+    echo "CLAUDE.md: append failed" >&2
+    exit 1
+  fi
 fi
 
 # --- .claude/rules/magento.md ---

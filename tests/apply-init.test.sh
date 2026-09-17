@@ -46,4 +46,33 @@ assert_eq "$(cat "$tmp/d/.claude/rules/magento.md")" "# Mine" "D rules untouched
 # E. bad args
 bash "$S" --block "$tmp/block1" > /dev/null 2>&1; assert_eq "$?" "1" "E usage exit"
 
+# F. marker text inside a fenced code example is not treated as the live block
+mkdir "$tmp/f"
+printf '# Heading\n\n```\n<!-- magento:begin -->\nexample\n<!-- magento:end -->\n```\n\n<!-- magento:begin -->\n## Magento (v1)\n- edition: open-source\n<!-- magento:end -->\n' > "$tmp/f/CLAUDE.md"
+bash "$S" --block "$tmp/block2" --rules "$tmp/rules1" --root "$tmp/f" > "$tmp/f.out"
+assert_contains "$tmp/f.out" "^CLAUDE.md: updated$" "F updated"
+assert_contains "$tmp/f/CLAUDE.md" "^example$" "F fenced example unchanged"
+assert_contains "$tmp/f/CLAUDE.md" "edition: commerce" "F new content present"
+assert_not_contains "$tmp/f/CLAUDE.md" "edition: open-source" "F old content gone"
+assert_eq "$(grep -c 'magento:begin' "$tmp/f/CLAUDE.md")" "2" "F two begin markers (fenced + live)"
+
+# G. a write failure is reported and exits non-zero, not silently swallowed
+mkdir -p "$tmp/g"
+printf '<!-- magento:begin -->\n## Magento (v1)\n- edition: open-source\n<!-- magento:end -->\n' > "$tmp/g/CLAUDE.md"
+if [ "$(id -u)" != "0" ]; then
+  chmod 555 "$tmp/g"
+  bash "$S" --block "$tmp/block2" --rules "$tmp/rules1" --root "$tmp/g" > "$tmp/g.out" 2>"$tmp/g.err"
+  g_exit=$?
+  chmod 755 "$tmp/g"
+  assert_eq "$g_exit" "1" "G exit nonzero"
+  assert_not_contains "$tmp/g.out" "^CLAUDE.md: updated$" "G stdout no updated"
+  assert_contains "$tmp/g/CLAUDE.md" "edition: open-source" "G CLAUDE.md unchanged"
+else
+  echo "  SKIP: G write failure test (running as root)"
+fi
+
+# H. --block with no value falls through to usage, not an unbound-variable crash
+bash "$S" --block > "$tmp/h.out" 2>"$tmp/h.err"; assert_eq "$?" "1" "H usage exit"
+assert_contains "$tmp/h.err" "usage:" "H stderr usage"
+
 report
