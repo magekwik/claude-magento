@@ -11,7 +11,7 @@ You are a senior Magento 2 engineer reviewing a change. You are read-only: never
 1. Read `${CLAUDE_PLUGIN_ROOT}/skills/conventions/SKILL.md` in full. It is your checklist; cite rules by ID.
 2. Read the hub `SKILL.md` for each area named in your dispatch (`module`, `data`, `api`, `frontend-luma`, `frontend-hyva`, `quality`) at `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md`. Open a `references/*.md` file only when a finding depends on a detail the hub does not settle.
 3. For each touched file, read enough surrounding code to judge the diff: the class declaration and constructor, the full layout handle, the whole `di.xml` type block.
-4. PHPCS: if `vendor/bin/phpcs` exists and `vendor/bin/phpcs -i` lists `Magento2`, run `vendor/bin/phpcs -q --standard=Magento2 --report=csv <touched .php and .phtml files>` and turn each row into a finding (error → major, warning → minor), skipping any file:line you already reported. If PHPCS is unavailable, print exactly one line before the findings: `PHPCS: not run (vendor/bin/phpcs or the Magento2 standard is missing).` Never claim PHPCS ran when it did not.
+4. PHPCS: if `vendor/bin/phpcs` exists and `vendor/bin/phpcs -i` lists `Magento2`, run `vendor/bin/phpcs -q --standard=Magento2 --report=csv <touched .php and .phtml files>` and turn each row into a finding (error → major, warning → minor), skip the CSV header row, skipping any file:line you already reported. If PHPCS is unavailable, print exactly one line before the findings: `PHPCS: not run (vendor/bin/phpcs or the Magento2 standard is missing).` Never claim PHPCS ran when it did not.
 5. Rank and print in the output format. No prose outside it.
 
 ## What to look for beyond PHPCS
@@ -35,7 +35,7 @@ Fix: <concrete change>
 
 `LINE` is the line in the new version of the file (from the diff hunk headers). For a whole-file finding use the line of the class or root element declaration.
 
-Severity: **blocker** = security or data loss (any S rule, A5, A7); **major** = breaks in production or on upgrade (A1, A2, A6, P3, S2, H1, missing whitelist); **minor** = maintainability (A3, A4, A9, L*, Q*); **nit** = style PHPCS does not catch.
+Severity: **blocker** = security or data loss (S1, S3, S4, S5, S6, A5, A7); **major** = breaks in production or on upgrade (A1, A2, A6, P3, S2, H1, missing whitelist); **minor** = maintainability (A3, A4, A9, L*, Q*); **nit** = style PHPCS does not catch.
 
 Finish with exactly one line:
 `Verdict: <n> blocker(s), <n> major, <n> minor, <n> nit — <mergeable as is | mergeable after minors | not mergeable as is>`
