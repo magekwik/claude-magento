@@ -30,7 +30,7 @@ public function afterDoThing(Subject $subject, Result $result, string $sku, int 
 }
 ```
 
-- Name = `before`/`around`/`after` + the method name with its first letter upper-cased (`get` → `afterGet`).
+- Name = `before`/`around`/`after` + the method name with its first letter upper-cased (`save` → `beforeSave`).
 - `$subject` is the intercepted object; type-hint the class or interface named in `di.xml`.
 - `before`: returns `null` (no change) or an array of *all* arguments in order. Return a partial array and the method is called with only those arguments.
 - `around`: `$proceed` is the next plugin or the original method; forgetting to call it silently disables every later plugin and the original (A2). Use only when the original must be skipped (a cache, a feature flag that short-circuits). It also makes stack traces deeper and slower on hot paths (P4).
@@ -43,7 +43,7 @@ public function afterDoThing(Subject $subject, Result $result, string $sku, int 
 
 ```xml
 <type name="Magento\Catalog\Api\ProductRepositoryInterface">
-    <plugin name="acme_catalog_product_badge" type="Acme\Catalog\Plugin\ProductRepositoryBadge" sortOrder="10"/>
+    <plugin name="acme_catalog_normalize_product_name" type="Acme\Catalog\Plugin\NormalizeProductName" sortOrder="10"/>
 </type>
 ```
 
@@ -73,7 +73,7 @@ Consequences: an `after` on a plugin sorted *before* an `around` still sees that
 
 Plugins cannot be applied to: `final` classes or methods; non-public methods; `static` methods; `__construct`/`__destruct`; virtual types; classes implementing `Magento\Framework\ObjectManager\NoninterceptableInterface`; objects created before the interception layer is bootstrapped. For those, you need a `preference` (last resort) or a different extension point.
 
-### Worked example — `after` plugin
+### Worked example — `before` plugin
 
 ```php
 <?php
@@ -84,17 +84,26 @@ namespace Acme\Catalog\Plugin;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 
-class ProductRepositoryBadge
+class NormalizeProductName
 {
-    public function afterGet(ProductRepositoryInterface $subject, ProductInterface $product): ProductInterface
+    /**
+     * Trim and collapse whitespace in the name before every save.
+     *
+     * @param bool $saveOptions
+     * @return array{ProductInterface, bool}
+     */
+    public function beforeSave(ProductRepositoryInterface $subject, ProductInterface $product, $saveOptions = false): array
     {
-        $product->setData('acme_badge', $product->getPrice() > 100 ? 'premium' : 'standard');
-        return $product;
+        $name = $product->getName();
+        if ($name !== null) {
+            $product->setName(trim((string) preg_replace('/\s+/', ' ', $name)));
+        }
+        return [$product, $saveOptions];
     }
 }
 ```
 
-`get($sku, $editMode = false, $storeId = null, $forceReload = false)` has four parameters; the plugin may declare any prefix of them after `$result` (here none). `setData` makes the value available to templates and PHP callers; to expose it over REST/GraphQL declare an extension attribute — see `magento:data`.
+The subject is `save(ProductInterface $product, $saveOptions = false)`; the plugin's parameters mirror it after `$subject`, and `$saveOptions` stays untyped because the interface leaves it untyped — a plugin must never narrow the subject's parameter types. A `before` plugin returns the (possibly modified) argument list; return `null` to leave arguments untouched.
 
 ## Observers
 

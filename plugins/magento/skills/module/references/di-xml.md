@@ -101,7 +101,7 @@ A virtual type is a *named* configuration of an existing class; no PHP file is g
 
 ```xml
 <type name="Magento\Catalog\Api\ProductRepositoryInterface">
-    <plugin name="acme_catalog_product_badge" type="Acme\Catalog\Plugin\ProductRepositoryBadge" sortOrder="10" disabled="false"/>
+    <plugin name="acme_catalog_normalize_product_name" type="Acme\Catalog\Plugin\NormalizeProductName" sortOrder="10" disabled="false"/>
 </type>
 ```
 

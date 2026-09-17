@@ -56,7 +56,7 @@ Two quick tests: *"Do I need to change what a method receives or returns?"* → 
 
 ## Minimal correct example
 
-An `after` plugin on `ProductRepositoryInterface::get` that appends a computed value to the product's custom attributes.
+A `before` plugin on `ProductRepositoryInterface::save` that normalises the product name on every save.
 
 `app/code/Acme/Catalog/etc/di.xml`:
 
@@ -64,12 +64,12 @@ An `after` plugin on `ProductRepositoryInterface::get` that appends a computed v
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <type name="Magento\Catalog\Api\ProductRepositoryInterface">
-        <plugin name="acme_catalog_product_badge" type="Acme\Catalog\Plugin\ProductRepositoryBadge" sortOrder="10"/>
+        <plugin name="acme_catalog_normalize_product_name" type="Acme\Catalog\Plugin\NormalizeProductName" sortOrder="10"/>
     </type>
 </config>
 ```
 
-`app/code/Acme/Catalog/Plugin/ProductRepositoryBadge.php`:
+`app/code/Acme/Catalog/Plugin/NormalizeProductName.php`:
 
 ```php
 <?php
@@ -80,17 +80,26 @@ namespace Acme\Catalog\Plugin;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 
-class ProductRepositoryBadge
+class NormalizeProductName
 {
-    public function afterGet(ProductRepositoryInterface $subject, ProductInterface $product): ProductInterface
+    /**
+     * Trim and collapse whitespace in the name before every save.
+     *
+     * @param bool $saveOptions
+     * @return array{ProductInterface, bool}
+     */
+    public function beforeSave(ProductRepositoryInterface $subject, ProductInterface $product, $saveOptions = false): array
     {
-        $product->setData('acme_badge', $product->getPrice() > 100 ? 'premium' : 'standard');
-        return $product;
+        $name = $product->getName();
+        if ($name !== null) {
+            $product->setName(trim((string) preg_replace('/\s+/', ' ', $name)));
+        }
+        return [$product, $saveOptions];
     }
 }
 ```
 
-Why this shape: the plugin targets the *interface* so it fires for every implementation and every caller (controllers, REST, GraphQL); `afterGet` receives the result as its second parameter and must return it; no constructor is needed because the plugin has no dependencies. `setData` makes the value available to templates and PHP callers; to expose it over REST/GraphQL declare an extension attribute — see `magento:data`.
+Why this shape: the plugin targets the *interface* so it fires for every implementation and every caller of the service contract (REST `POST /V1/products`, other modules' repositories, your own code) — but not for code that calls `$product->save()` on the model directly, as the admin product form and the CSV importer do; `beforeSave` mirrors the subject's parameters after `$subject` — `save(ProductInterface $product, $saveOptions = false)` — without narrowing their types; no constructor is needed because the plugin has no dependencies. A `before` plugin returns the (possibly modified) argument list; return `null` to leave arguments untouched.
 
 The same rules applied to an observer: `Observer/OrderPlacedLogger.php` implements `Magento\Framework\Event\ObserverInterface`, injects `Psr\Log\LoggerInterface` through its constructor, `execute(Observer $observer): void` reads `$observer->getEvent()->getData('order')` and logs; `etc/events.xml` binds it to `sales_order_place_after`. See `plugins-vs-observers.md` for the full listing.
 
