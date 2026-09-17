@@ -52,4 +52,33 @@ mkdir -p "$tmp/commerce"; printf '{"require":{"magento/product-enterprise-editio
 printf '{"packages":[{"name":"magento/product-enterprise-edition","version":"2.4.7"}]}' > "$tmp/commerce/composer.lock"
 assert_eq "$(bash "$S" "$tmp/commerce" | python3 -c 'import json,sys;d=json.load(sys.stdin);print(d["magento"]["edition"],d["magento"]["version"])')" "commerce 2.4.7" "commerce edition"
 
+# 6. module registered with double-quoted name (no grep/tr crash under set -e pipefail)
+cp -R "$ROOT/evals/fixtures/luma-skeleton" "$tmp/dquote-module"
+mkdir -p "$tmp/dquote-module/app/code/Acme/Other"
+cat > "$tmp/dquote-module/app/code/Acme/Other/registration.php" <<'PHP'
+<?php
+use Magento\Framework\Component\ComponentRegistrar;
+ComponentRegistrar::register(ComponentRegistrar::MODULE, "Acme_Other", __DIR__);
+PHP
+bash "$S" "$tmp/dquote-module" > "$tmp/dquote-module.json"; rc=$?
+assert_eq "$rc" "0" "double-quoted module exit code"
+python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$tmp/dquote-module.json" && PASS=$((PASS+1)) || { FAIL=$((FAIL+1)); echo "  FAIL: double-quoted module output is not valid JSON"; }
+assert_eq "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(sys.argv[2] in [m["name"] for m in d["modules"]])' "$tmp/dquote-module.json" "Acme_Other")" "True" "double-quoted module name detected"
+
+# 7. theme vendor/name containing a double quote (must still produce valid, escaped JSON)
+cp -R "$ROOT/evals/fixtures/luma-skeleton" "$tmp/dquote-theme"
+theme_vendor='Ac"me'
+mkdir -p "$tmp/dquote-theme/app/design/frontend/$theme_vendor/default"
+cat > "$tmp/dquote-theme/app/design/frontend/$theme_vendor/default/theme.xml" <<'XML'
+<?xml version="1.0"?>
+<theme xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Config/etc/theme.xsd">
+    <title>Quoted Vendor Theme</title>
+    <parent>Magento/luma</parent>
+</theme>
+XML
+bash "$S" "$tmp/dquote-theme" > "$tmp/dquote-theme.json"; rc=$?
+assert_eq "$rc" "0" "quoted theme exit code"
+python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$tmp/dquote-theme.json" && PASS=$((PASS+1)) || { FAIL=$((FAIL+1)); echo "  FAIL: quoted theme output is not valid JSON"; }
+assert_eq "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(any(t["name"]==sys.argv[2] for t in d["themes"]))' "$tmp/dquote-theme.json" 'Ac"me/default')" "True" "quoted theme name detected"
+
 report

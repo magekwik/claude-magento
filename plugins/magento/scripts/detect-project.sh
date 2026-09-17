@@ -23,7 +23,7 @@ if [ -f composer.lock ]; then
   elif grep -q '"name": *"magento/product-community-edition"' composer.lock; then edition="open-source"; pkg="magento/product-community-edition"
   fi
   if [ "$edition" != "unknown" ]; then
-    v=$(grep -A3 "\"name\": *\"$pkg\"" composer.lock | sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' | head -1)
+    v=$(grep -A3 "\"name\": *\"$pkg\"" composer.lock | sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' | head -1 || true)
     [ -n "$v" ] && version="\"$(json_str "$v")\""
   fi
 fi
@@ -40,7 +40,7 @@ modules=""
 for reg in app/code/*/*/registration.php; do
   [ -f "$reg" ] || continue
   dir="${reg%/registration.php}"
-  name=$(grep -o "'[A-Za-z0-9]*_[A-Za-z0-9]*'" "$reg" | head -1 | tr -d "'")
+  name=$(grep -o "['\"][A-Za-z0-9]*_[A-Za-z0-9]*['\"]" "$reg" | head -1 | tr -d "'\"" || true)
   if [ -z "$name" ]; then vendor=$(basename "$(dirname "$dir")"); name="${vendor}_$(basename "$dir")"; fi
   modules="${modules:+$modules,}{\"name\":\"$(json_str "$name")\",\"path\":\"$(json_str "$dir")\"}"
 done
@@ -55,7 +55,7 @@ for tx in app/design/*/*/*/theme.xml; do
   theme=$(echo "$dir" | cut -d/ -f5)
   parent=$(sed -n 's/.*<parent>\([^<]*\)<\/parent>.*/\1/p' "$tx" | head -1)
   [ -n "$parent" ] && parent="\"$(json_str "$parent")\"" || parent="null"
-  themes="${themes:+$themes,}{\"area\":\"$area\",\"name\":\"$vendor/$theme\",\"path\":\"$(json_str "$dir")\",\"parent\":$parent}"
+  themes="${themes:+$themes,}{\"area\":\"$(json_str "$area")\",\"name\":\"$(json_str "$vendor/$theme")\",\"path\":\"$(json_str "$dir")\",\"parent\":$parent}"
 done
 
 # --- hyva ---
