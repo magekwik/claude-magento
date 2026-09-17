@@ -8,5 +8,6 @@ grep -Eq 'sessionStorage|x-show' "$tpl" || { echo "no dismiss state handling"; e
 grep -q 'escaper->escapeHtml' "$tpl" || { echo "no escaping"; exit 1; }
 layout=$(find app -path '*layout/default.xml' -newer composer.json | head -1)
 [ -n "$layout" ] || { echo "no default.xml layout"; exit 1; }
-grep -Eqi 'tailwind.config|build-prod|content' "$TRANSCRIPT" || { echo "transcript does not mention Tailwind rebuild/content paths"; exit 1; }
+grep -rlq 'implements .*ArgumentInterface' app 2>/dev/null || { echo "no ViewModel implementing ArgumentInterface"; exit 1; }
+grep -Eqi 'tailwind\.config|build-prod|npm run build|@source|hyva-themes\.json' "$TRANSCRIPT" || { echo "transcript does not mention Tailwind rebuild/content paths"; exit 1; }
 exit 0

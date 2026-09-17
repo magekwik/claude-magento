@@ -51,7 +51,7 @@ Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.4. Rules are numbered so 
 
 - **H1.** No RequireJS, Knockout, jQuery, `x-magento-init` or UI components; behaviour is Alpine.js (`x-data`) and styling is Tailwind utilities — *Hyvä removed the Luma JS stack.* PHPCS: —
 - **H2.** Before writing any frontend for a third-party module, check for a Hyvä compatibility module (`hyva-themes/magento2-*` or a `*-hyva` module) and follow its patterns — *Luma templates from extensions render broken in Hyvä (no RequireJS, no CSS).* PHPCS: —
-- **H3.** Tailwind must be able to see every template: add module paths to the theme's `tailwind.config.js` `content` and rebuild (`npm run build-prod` in `web/tailwind`) — *unseen classes are purged.* PHPCS: —
+- **H3.** Tailwind must be able to see every template: register module template paths with the theme's build (`tailwind.config.js` `content` on Tailwind 3 / `@source` in `tailwind-source.css` plus `hyva-themes.json` on Tailwind 4) and rebuild (`npm run build` in `web/tailwind`) — *unseen classes are purged.* PHPCS: —
 - **H4.** Data comes from ViewModels; per-customer data comes through private content (customer-data sections delivered by the `private-content-loaded` event), never Knockout `customer-data` bindings — *FPC-safe.* PHPCS: —
 - **H5.** Override templates in the child theme mirroring the parent path; never copy the whole parent theme — *upgradability.* PHPCS: —
 

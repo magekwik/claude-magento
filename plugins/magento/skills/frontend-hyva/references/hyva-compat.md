@@ -4,7 +4,7 @@
 
 ## Why a Luma-built extension breaks on Hyvä
 
-A Hyvä store view is a different theme tree, not a restyled Luma: `Hyva/default` does not inherit from `Magento/blank`, no RequireJS, jQuery, Knockout or `mage/*` script is on the page, and the theme's `styles.css` contains only the Tailwind utilities found in *its* scanned files. Since 1.3.21/1.4.0 `hyva-themes/magento2-base-layout-reset` also generates block-free copies of the base layout of every `Magento_*` module and of the bundled extensions it lists (Amazon Pay, Braintree, Klarna, Dotdigital, Vertex, …) in `var/hyva-layout-resets/`, so core Luma blocks never enter the merged layout of a Hyvä page — Hyvä re-adds its own blocks under `hyva_*` handles. Third-party modules are not reset, which is why their pages *look* half-present:
+A Hyvä store view is a different theme tree, not a restyled Luma: `Hyva/default` does not inherit from `Magento/blank`, no RequireJS, jQuery, Knockout or `mage/*` script is on the page, and the theme's `styles.css` contains only the Tailwind utilities found in *its* scanned files. Since 1.3.21/1.4.0 `hyva-themes/magento2-base-layout-reset` (before that, the `Hyva/reset` parent theme from `hyva-themes/magento2-reset-theme` did the same job with static override files) also generates block-free copies of the base layout of every `Magento_*` module and of the bundled extensions it lists (Amazon Pay, Braintree, Klarna, Dotdigital, Vertex, …) in `var/hyva-layout-resets/`, so core Luma blocks never enter the merged layout of a Hyvä page — Hyvä re-adds its own blocks under `hyva_*` handles. Third-party modules are not reset, which is why their pages *look* half-present:
 
 - Their layout XML and `.phtml` files do load and print markup.
 - Any `x-magento-init`, `data-mage-init`, `require([...])`, `define([...])`, `data-bind` or Knockout `.html` template does nothing, and `require is not defined` / `$ is not defined` appears in the console (H1).
@@ -15,7 +15,7 @@ So before writing frontend code for any extension (H2): check whether a compatib
 
 ## Finding an existing compatibility module
 
-1. In the project: `ls app/code/Hyva vendor/hyva-themes` and `composer show 'hyva-themes/*' '*/magento2-hyva-*'`; `app/etc/hyva-themes.json` lists every module already registered for the Tailwind build; `grep -rl CompatModuleRegistry app/code vendor --include=di.xml` finds registrations.
+1. In the project: `ls app/code/Hyva vendor/hyva-themes` and `composer show | grep -E 'hyva-themes/|magento2-hyva-'`; `app/etc/hyva-themes.json` lists every module already registered for the Tailwind build; `grep -rl CompatModuleRegistry app/code vendor --include=di.xml` finds registrations.
 2. In the Hyvä ecosystem: the Compatibility Module Tracker board (`https://gitlab.hyva.io/hyva-public/module-tracker/-/boards`, public) shows for each original module whether a compat module is requested, in progress or published; published ones install from `hyva-themes.repo.packagist.com` with a Hyvä licence (`composer require hyva-themes/magento2-<vendor>-<module>`), open-source ones from Packagist or GitHub.
 3. From the vendor: many extension vendors ship their own (`<vendor>/magento2-hyva-<module>` or a `*-hyva` package), and some modules are "Hyvä-ready" without a separate package — they carry `hyva_*` layout files and Alpine templates themselves and register with `hyva-themes.json` (see below).
 
@@ -81,7 +81,7 @@ The theme's build only scans the theme. Every module whose templates use Tailwin
 }
 ```
 
-The key names are `extensions` → objects with `src` (path relative to the Magento root, pointing at the directory that contains `view/`). The file is written by `bin/magento hyva:config:generate` and regenerated automatically whenever `app/etc/config.php` or `env.php` is written (`setup:upgrade`, `module:enable`, `config:set`, `app:config:import`), so do not edit it by hand — a module adds itself by observing `hyva_config_generate_before`:
+The key names are `extensions` → objects with `src` (path relative to the Magento root, pointing at the directory that contains `view/`). The file is written by `bin/magento hyva:config:generate` and regenerated automatically by most commands that modify `app/etc/config.php` or `env.php` (`setup:upgrade`, `module:enable`/`disable`, `app:config:import`), so do not edit it by hand — a module adds itself by observing `hyva_config_generate_before`:
 
 `app/code/Acme/Catalog/etc/frontend/events.xml`:
 
