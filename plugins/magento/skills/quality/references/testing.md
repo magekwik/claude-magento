@@ -25,7 +25,7 @@ Copy `phpunit.xml.dist` to `phpunit.xml` (gitignored by convention) for local ch
 
 | Call | Does |
 |---|---|
-| `getObject(Foo::class, ['bar' => $mock, 'limit' => 5])` | reflects `Foo::__construct`, passes the named arguments you gave, and for every other parameter creates a `createMock()` double of its class/interface (arrays become `[]`, scalar defaults are kept; `AbstractResource` and `TranslateInterface` get special mocks); keys that are not constructor parameters are written into same-named properties |
+| `getObject(Foo::class, ['bar' => $mock, 'limit' => 5])` | reflects `Foo::__construct`, passes the named arguments you gave, and for every other class- or interface-typed parameter creates a `createMock()` double (`AbstractResource` and `TranslateInterface` get special mocks); builtin-typed parameters (arrays, scalars) receive their declared default, or `null` when there is none — give array parameters a `= []` default or pass them explicitly, or `newInstanceArgs` throws a `TypeError`; keys that are not constructor parameters are written into same-named properties |
 | `getConstructArguments(Foo::class, [...])` | the same argument array without instantiating — use it to grab the auto-generated mocks (`$args['logger']`) and set expectations on them |
 | `getCollectionMock(Collection::class, [$item1, $item2])` | a collection double whose iterator yields the items |
 | `setBackwardCompatibleProperty($object, 'name', $value)` | reflection write to a private/protected property — only for properties with no constructor path |
@@ -69,8 +69,8 @@ public function testExecuteLogsOrderIncrementId(): void
     $logger = $this->createMock(LoggerInterface::class);
     $logger->expects(self::once())->method('info')->with('Order placed: 000000123');
 
-    $observer = (new ObjectManager($this))->getObject(OrderPlacedLogger::class, ['logger' => $logger]);
-    $observer->execute(new Observer(['event' => new Event(['order' => $order])]));   // Magento\Framework\Event
+    $orderPlacedLogger = (new ObjectManager($this))->getObject(OrderPlacedLogger::class, ['logger' => $logger]);
+    $orderPlacedLogger->execute(new Observer(['event' => new Event(['order' => $order])]));   // Magento\Framework\Event
 }
 ```
 
@@ -113,7 +113,7 @@ cd dev/tests/integration && ../../../vendor/bin/phpunit ../../../app/code/Acme/C
 
 The first run installs Magento (minutes); later runs reuse it while `TESTS_CLEANUP` is `disabled` or nothing in `app/etc`/`dev/tests/integration/etc` changed. Run one directory or one class at a time; the whole suite is hours.
 
-**Annotations and attributes.** Every marker exists in two spellings: the doc-comment annotation (all releases, still used by 1080 core test files in 2.4.9) and, from 2.4.5, a PHP attribute in `Magento\TestFramework\Fixture` (what new core tests use — the framework's own `phpstan.neon` even ignores the "not repeatable" false positives PHPStan raises for them). Class-level applies to every test in the class; method-level overrides it.
+**Annotations and attributes.** Every marker exists in two spellings: the doc-comment annotation (all releases, still used by 1080 core test files in 2.4.9) and, from 2.4.5, a PHP attribute in `Magento\TestFramework\Fixture` (what Adobe's docs recommend for new tests — the framework's own `phpstan.neon` even ignores the "not repeatable" false positives PHPStan raises for them). Class-level applies to every test in the class; method-level overrides it.
 
 | Annotation | Attribute (2.4.5+) | Effect |
 |---|---|---|
@@ -158,7 +158,7 @@ class BrandListTest extends TestCase
 }
 ```
 
-`_files/brands.php` is a plain script run inside the framework (object manager via `Bootstrap::getObjectManager()`, repositories to create data); `brands_rollback.php` deletes what it created — with DB isolation the transaction rollback also undoes it, but the rollback file is still required for `@magentoDbIsolation disabled` runs and for `TESTS_CLEANUP` `disabled`. Fixture scripts run with the `Magento\TestFramework\Workaround\Override\Fixture\Resolver` so one fixture can `requireDataFixture()` another.
+`_files/brands.php` is a plain script run inside the framework (object manager via `Bootstrap::getObjectManager()`, repositories to create data); `brands_rollback.php` deletes what it created — a missing rollback file is silently skipped (`LegacyDataFixture` checks `file_exists`), so the run still succeeds; it is what keeps the database clean under `@magentoDbIsolation disabled` and `TESTS_CLEANUP` `disabled`. Fixture scripts run with the `Magento\TestFramework\Workaround\Override\Fixture\Resolver` so one fixture can `requireDataFixture()` another.
 
 Controllers: extend `AbstractController`, `$this->dispatch('acme/brand/index')`, then `$this->getResponse()->getBody()`, `assertRedirect()`, `assertSessionMessages()`; set `$this->getRequest()->setMethod('POST')->setPostValue([...])` for `HttpPostActionInterface` actions (S2). Admin: extend `AbstractBackendController`, set `protected $resource = 'Acme_Catalog::brands';` and `protected $uri = 'backend/acme/brand/index';` — the base class adds `testAclHasAccess`/`testAclNoAccess` for you (S1).
 
