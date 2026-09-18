@@ -30,7 +30,7 @@ Read `version` from `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Call it 
 
 ## 4. Render the CLAUDE.md block
 
-Write this to a temp file (use the session scratchpad directory if one is listed in your system prompt, else `mktemp`), substituting values. Keep the markers as the first and last lines. Where a value is `null`, write `unknown`.
+Create the temp directory: `mkdir -p .claude/.magento-init-tmp` under the project root (it is inside the project, so a sandboxed session can always write to and remove it). Write this to `.claude/.magento-init-tmp/block.md`, substituting values. Keep the markers as the first and last lines. Where a value is `null`, write `unknown`.
 
 ```
 <!-- magento:begin -->
@@ -53,12 +53,15 @@ Write this to a temp file (use the session scratchpad directory if one is listed
 ## 5. Render the rules file and apply
 
 ```
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/render-rules.sh" --version VERSION --hyva HYVA --luma LUMA > <rules temp file>
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/apply-init.sh" --block <block temp file> --rules <rules temp file> --root .
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/render-rules.sh" --version VERSION --hyva HYVA --luma LUMA > .claude/.magento-init-tmp/rules.md
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/apply-init.sh" --block .claude/.magento-init-tmp/block.md --rules .claude/.magento-init-tmp/rules.md --root .
 ```
+
+Once apply-init.sh has exited successfully, remove the temp directory: `rm -rf .claude/.magento-init-tmp`.
 
 ## 6. Report
 
 Print the two summary lines from `apply-init.sh` verbatim, then:
 - if the rules file was "left alone (owned by you)": one sentence saying the header line was removed so it is now user-owned, and how to regenerate (delete the file and rerun).
+- if the temp directory could not be removed, say so.
 - one line: "Review `CLAUDE.md` and commit both files."
