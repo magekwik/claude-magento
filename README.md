@@ -19,6 +19,7 @@ Claude Code plugins for Magento, by [Magekwik](https://magekwik.com).
 - Validate: `claude plugin validate ./plugins/magento --strict && claude plugin validate .`
 - Unit tests (scripts): `bash tests/run.sh`
 - Evals (need a logged-in `claude`): `bash evals/run.sh` — see `evals/README.md`
+- User guide: `docs/USER-GUIDE.md`
 - Release: `docs/release-checklist.md`
 
 MIT
