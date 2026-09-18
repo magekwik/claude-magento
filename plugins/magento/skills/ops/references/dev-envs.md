@@ -24,6 +24,10 @@ When two markers are present (a Warden project that also carries a `docker-compo
 - Hostnames inside the containers match the service names — `env.php` uses `db`, `redis`, `opensearch`, `rabbitmq`; the store URL is `https://<TRAEFIK_SUBDOMAIN>.<TRAEFIK_DOMAIN>/` via Traefik with a locally signed certificate (`warden sign-certificate <domain>`).
 - Composer runs inside `warden shell` (or `warden env exec php-fpm composer …`); `~/.composer/` is mounted from the host so credentials and cache are shared. Node/Grunt also run inside (`NODE_VERSION`).
 - Xdebug: `php-debug` container, routed by the `XDEBUG_SESSION` cookie; `warden debug` for CLI; port 9003 with `PHP_XDEBUG_3=1` (9000 for Xdebug 2). See `references/debugging.md`.
+- File sync (macOS): Warden syncs the project into the container with Mutagen and deliberately excludes `pub/static`, `pub/media`, `var/` and `generated/` — they exist only inside the container, never on the host.
+- On a brand-new environment `bin/magento setup:install` fails with `Missing write permissions to the current directory (…/pub/static)` until those directories are created inside the container: `warden env exec php-fpm mkdir -p pub/static pub/media var generated`.
+- Their contents are not visible on the host — read logs with a command that runs inside the container (`warden env exec php-fpm tail -f var/log/system.log`), not host `tail`/`ls`.
+- `warden sync list` shows sync session state and reports `Watching for changes` once the initial sync of a full install (a few minutes) has settled; `warden sync pause`/`warden sync resume` stop and restart it.
 
 ## DDEV
 
@@ -59,6 +63,7 @@ Composer must run with the same PHP major/minor as the runtime (the lock file's 
 - https://docs.warden.dev/environments/customizing.html — Customizing Warden environments (`.env` version variables, `.warden/warden-env.yml` and OS-specific overrides, `php.ini` and nginx overrides)
 - https://docs.warden.dev/configuration/xdebug.html — Warden Xdebug (`php-fpm` vs `php-debug`, cookie routing, ports, `warden debug`)
 - https://docs.warden.dev/configuration/database.html — Warden database connections from host tools
+- https://docs.warden.dev/architecture.html — Warden architecture overview (Mutagen listed as the host service doing bi-directional file sync between host and containers on macOS; `pub/static`/`pub/media`/`var`/`generated` container-only exclusions and the `warden sync` subcommands are not documented on this or any other Warden docs page as of writing — this is field knowledge, verify against `warden sync --help` if behavior seems to differ)
 - https://docs.ddev.com/en/stable/users/quickstart/ — DDEV quickstart, Magento 2 section (`ddev config --project-type=magento2 --docroot=pub --upload-dirs=media --disable-settings-management`, `ddev add-on get ddev/ddev-opensearch`, `ddev composer create-project`, `ddev magento setup:install … --db-host=db`, `auth.json` in `homeadditions`)
 - https://docs.ddev.com/en/stable/users/usage/cli/ — DDEV CLI usage (`ddev start|describe|launch|ssh|exec|mysql|import-db|export-db|composer|xdebug|logs`, `ddev magento` for Magento 2, `ddev logs -s db`)
 - https://docs.ddev.com/en/stable/users/usage/commands/ — DDEV command reference (`ddev exec -s db`, `ddev ssh -s db`, `ddev logs -f`, `ddev magento list`, `ddev mysql`)

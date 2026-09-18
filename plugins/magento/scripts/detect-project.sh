@@ -3,6 +3,8 @@
 # Usage: detect-project.sh [root]   Exit 2 if root is not a Magento project.
 # env: warden (.warden/ or .env with WARDEN_ENV_TYPE=) > ddev (.ddev/) > docker-magento
 #      (compose file + bin/clinotty, Mark Shust's wrapper) > docker (compose file) > native.
+# tooling.phpcs: vendor/bin/phpcs present (installed, config or not) OR a phpcs.xml*/
+#      phpcs.xml.dist config present.
 set -euo pipefail
 
 root="${1:-.}"
@@ -76,7 +78,11 @@ else
 fi
 
 # --- tooling ---
+# phpcs: true when vendor/bin/phpcs exists (installed, even with no project config yet —
+# a fresh `composer create-project` ships the Magento2 standard but no phpcs.xml) OR a
+# phpcs.xml*/phpcs.xml.dist config is present.
 phpcs=false; phpstan=false; phpunit=false
+[ -f vendor/bin/phpcs ] && phpcs=true
 for f in phpcs.xml phpcs.xml.dist; do [ -f "$f" ] && phpcs=true; done
 for f in phpstan.neon phpstan.neon.dist; do [ -f "$f" ] && phpstan=true; done
 for f in dev/tests/unit/phpunit.xml dev/tests/unit/phpunit.xml.dist; do [ -f "$f" ] && phpunit=true; done

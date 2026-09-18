@@ -57,7 +57,7 @@ Run it from the project root — the directory that contains `bin/magento`.
 - Custom modules under `app/code` and themes under `app/design`, with each theme's parent
 - Whether the store is Hyvä (theme parent chain or `hyva-themes/*` in `composer.lock`)
 - The dev environment: **Warden**, **DDEV**, **Docker Compose**, **docker-magento**, or native — and therefore the right way to run `bin/magento`
-- Tooling present: `phpcs.xml*`, `phpstan.neon*`, `dev/tests/unit/phpunit.xml*`
+- Tooling present: phpcs (`vendor/bin/phpcs` or `phpcs.xml*`), `phpstan.neon*`, `dev/tests/unit/phpunit.xml*`
 - Deployment mode from `app/etc/env.php`
 
 **What it writes — and nothing else:**

@@ -39,6 +39,14 @@ assert_eq "$(json_get "$tmp/hyva.json" mode)" "production" "hyva mode"
 assert_eq "$(json_get "$tmp/hyva.json" themes.0.parent)" "Hyva/default" "hyva parent"
 assert_eq "$(json_get "$tmp/hyva.json" tooling.phpcs)" "false" "hyva phpcs"
 
+# 3b. vendor/bin/phpcs installed but no config -> tooling.phpcs true
+cp -R "$ROOT/evals/fixtures/hyva-skeleton" "$tmp/vendor-phpcs"
+mkdir -p "$tmp/vendor-phpcs/vendor/bin"
+printf '#!/usr/bin/env php\n<?php // stand-in for squizlabs/php_codesniffer bin/phpcs\n' > "$tmp/vendor-phpcs/vendor/bin/phpcs"
+chmod +x "$tmp/vendor-phpcs/vendor/bin/phpcs"
+bash "$S" "$tmp/vendor-phpcs" > "$tmp/vendor-phpcs.json"
+assert_eq "$(json_get "$tmp/vendor-phpcs.json" tooling.phpcs)" "true" "vendor/bin/phpcs with no config -> phpcs true"
+
 # 4. env markers and unreadable env.php
 cp -R "$ROOT/evals/fixtures/luma-skeleton" "$tmp/warden"; mkdir "$tmp/warden/.warden"
 assert_eq "$(bash "$S" "$tmp/warden" | python3 -c 'import json,sys;print(json.load(sys.stdin)["env"])')" "warden" "warden env"

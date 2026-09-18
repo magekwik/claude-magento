@@ -14,7 +14,7 @@ Run: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/detect-project.sh" .`
 
 - Exit code 2 → print its stderr line (`not a Magento root: …`) and stop. Nothing is written.
 - Any other non-zero exit → show stderr and stop.
-- Exit 0 → the stdout JSON is FACTS. Keys: `magento.edition`, `magento.version`, `php`, `modules[]{name,path}`, `themes[]{area,name,path,parent}`, `hyva`, `env` (`warden|ddev|docker|docker-magento|native`), `tooling{phpcs,phpstan,phpunit}`, `mode`. `php` is the host CLI's version (may differ from the container's).
+- Exit 0 → the stdout JSON is FACTS. Keys: `magento.edition`, `magento.version`, `php`, `modules[]{name,path}`, `themes[]{area,name,path,parent}`, `hyva`, `env` (`warden|ddev|docker|docker-magento|native`), `tooling{phpcs,phpstan,phpunit}` (`phpcs` ✓ means `vendor/bin/phpcs` or a `phpcs.xml*` config is present), `mode`. `php` is the host CLI's version (may differ from the container's).
 
 ## 2. Plugin version
 
@@ -30,7 +30,7 @@ Read `version` from `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Call it 
 
 ## 4. Render the CLAUDE.md block
 
-Create the temp directory: `mkdir -p .claude/.magento-init-tmp` under the project root (it is inside the project, so a sandboxed session can always write to and remove it). Write this to `.claude/.magento-init-tmp/block.md`, substituting values. Keep the markers as the first and last lines. Where a value is `null`, write `unknown`.
+Create the temp directory: `mkdir -p .magento-init-tmp` under the project root (a hidden folder at the project root — not under `.claude/`, which tools may not write to, and inside the project so a sandboxed session can always remove it). Write this to `.magento-init-tmp/block.md`, substituting values. Keep the markers as the first and last lines. Where a value is `null`, write `unknown`.
 
 ```
 <!-- magento:begin -->
@@ -53,11 +53,11 @@ Create the temp directory: `mkdir -p .claude/.magento-init-tmp` under the projec
 ## 5. Render the rules file and apply
 
 ```
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/render-rules.sh" --version VERSION --hyva HYVA --luma LUMA > .claude/.magento-init-tmp/rules.md
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/apply-init.sh" --block .claude/.magento-init-tmp/block.md --rules .claude/.magento-init-tmp/rules.md --root .
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/render-rules.sh" --version VERSION --hyva HYVA --luma LUMA > .magento-init-tmp/rules.md
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/apply-init.sh" --block .magento-init-tmp/block.md --rules .magento-init-tmp/rules.md --root .
 ```
 
-Once apply-init.sh has exited successfully, remove the temp directory: `rm -rf .claude/.magento-init-tmp`.
+Once apply-init.sh has exited successfully, remove the temp directory: `rm -rf .magento-init-tmp`.
 
 ## 6. Report
 

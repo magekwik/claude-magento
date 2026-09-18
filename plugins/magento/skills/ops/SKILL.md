@@ -67,6 +67,7 @@ When answering "what do I run" for a developer-mode project, state explicitly th
 | Page never cached | a `cacheable="false"` block somewhere in the merged layout (P3), a controller setting `Cache-Control: no-cache`, POST/non-GET, or maintenance mode; inspect `X-Magento-Tags` and `X-Magento-Cache-Debug` |
 | 404 on a new route/controller/admin page | `cache:clean config`, then check `routes.xml` `frontName`, `module:status Acme_Catalog`, ACL resource of the admin controller |
 | Unexpected 503 maintenance page | `var/.maintenance.flag`; `maintenance:status`; `var/.maintenance.ip` for exempt IPs |
+| `setup:install` fails on `pub/static` permissions (Warden, brand-new env) | container-only dirs not created yet — `references/dev-envs.md` (Warden file sync) |
 
 ## Rules that bite
 
