@@ -21,6 +21,5 @@ Claude Code plugins for Magento, by [Magekwik](https://magekwik.com).
 - Evals (need a logged-in `claude`): `bash evals/run.sh` — see `evals/README.md`
 - Release: `docs/release-checklist.md`
 
-Design: `docs/superpowers/specs/`. Plan: `docs/superpowers/plans/`.
 
 MIT
