@@ -1,6 +1,6 @@
 # PHPCS with the Magento2 coding standard
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (Q1 run the standard, A1 no ObjectManager, A5 no raw SQL, A6 declarative schema, A9 DI, S3 escaping, S5 insecure functions, L2 `$block`).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (Q1 run the standard, A1 no ObjectManager, A5 no raw SQL, A6 declarative schema, A9 DI, S3 escaping, S5 insecure functions, L2 `$block`).
 
 The standard is the Composer package `magento/magento-coding-standard` (`type: phpcodesniffer-standard`, latest tag 40 at the time of writing, requires `squizlabs/php_codesniffer ^3.10.2`, `phpcsstandards/phpcsutils` and `magento/php-compatibility-fork`). It installs four PHPCS standards: `Magento2` (the one you use), `Magento2Framework` (copyright/licence headers for core), `PHPCompatibility` and `PHPCSUtils`. `Magento2` contains 308 sniffs: 85 of its own under the `Magento2.*` prefix, 65 borrowed from Generic/PEAR/PSR1/PSR2/PSR12/Squiz, and 158 `PHPCompatibility` sniffs (its `testVersion` is set to `8.1-8.2` inside the ruleset).
 
@@ -28,7 +28,7 @@ PHPCS only knows a standard that is listed in its `installed_paths` config (`ven
 
 ## Run
 
-The review baseline (Q1) and the command the `magento:code-reviewer` agent executes:
+The review baseline (Q1) and the command the `magekwik-magento:code-reviewer` agent executes:
 
 ```bash
 vendor/bin/phpcs -q --standard=Magento2 --report=csv --basepath="$(git rev-parse --show-toplevel)" <paths>

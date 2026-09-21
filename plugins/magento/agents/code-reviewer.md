@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Reviews Magento 2 diffs for framework-specific defects (DI misuse, direct SQL, missing ACL/CSRF, plugin/observer misuse, layout XML and Luma/Hyvä mistakes, coding-standard violations). Use for /magento:review or when asked to review Magento changes.
+description: Reviews Magento 2 diffs for framework-specific defects (DI misuse, direct SQL, missing ACL/CSRF, plugin/observer misuse, layout XML and Luma/Hyvä mistakes, coding-standard violations). Use for /magekwik-magento:review or when asked to review Magento changes.
 tools: [Read, Grep, Glob, Bash]
 ---
 

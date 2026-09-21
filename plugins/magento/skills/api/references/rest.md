@@ -1,6 +1,6 @@
 # REST: `webapi.xml`, serialisation, searching, errors, tooling
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A4 contracts, A8 dependencies, S1 authorisation, S6 input validation, P1/P2 paging). The service contract itself (`Api/`, `Api/Data/`, repository, search results) is built in `magento:data`; this file publishes it.
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A4 contracts, A8 dependencies, S1 authorisation, S6 input validation, P1/P2 paging). The service contract itself (`Api/`, `Api/Data/`, repository, search results) is built in `magekwik-magento:data`; this file publishes it.
 
 ## How a request is served
 
@@ -11,7 +11,7 @@
 
 ## `webapi.xml` reference
 
-`etc/webapi.xml`, root `<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">`. Validated by `vendor/magento/module-webapi/etc/webapi.xsd` (which redefines `webapi_base.xsd`).
+`etc/webapi.xml`, root `<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magekwik-magento:module:Magento_Webapi:etc/webapi.xsd">`. Validated by `vendor/magento/module-webapi/etc/webapi.xsd` (which redefines `webapi_base.xsd`).
 
 | Element / attribute | Required | Meaning |
 |---|---|---|
@@ -30,7 +30,7 @@ Merging: routes are keyed by `url` + `method`, resources by `ref`, parameters by
 - The service name derives from the class: `Acme\Catalog\Api\BrandRepositoryInterface` at `/V1/...` becomes `acmeCatalogBrandRepositoryV1` — used by `?services=`, Swagger and SOAP. Anything outside `Vendor\Module\Api\` throws `The service interface name "…" is invalid.` when the schema or WSDL is generated.
 - Every method has a docblock with `@return`; the return annotation is authoritative — `TypeProcessor` throws `Each method must have a doc block.` for a bare method and `Method's return type must be specified using @return annotation` for a docblock without one, even with a native `: array` or `: BrandInterface`. Supported types: `string`, `int`, `float`, `bool` (also `boolean`, `integer`, `double`), `mixed` (`anyType`), an `Api/Data` interface, and `[]` arrays of any of those. `Type|null` marks the return nullable.
 - Parameters take their type from the native declaration (`int $id`, `BrandInterface $brand`); an untyped or `array` parameter needs a `@param Type[] $name` tag in position. Optional parameters need PHP defaults (`?int $storeId = null`) — a caller omitting a parameter without a default gets `"storeId" is required. Enter and try again.` (400).
-- Data objects are `Api/Data` interfaces. Incoming JSON is hydrated through the implementation's constructor (only simple types and `*\Api\Data\*` types are accepted there) and then `set*` methods; unknown keys are a 400 `"foo" is not supported. Correct the field name and try again.` Outgoing objects are read through the declared interface's `get*`/`is*`/`has*` methods with no parameters — `getEntityId()` → `entity_id`, `isActive()` → `active`, `hasOptions()` → `options`. `getExtensionAttributes()` → `extension_attributes`, `getCustomAttributes()` → `custom_attributes` (EAV, `magento:data`).
+- Data objects are `Api/Data` interfaces. Incoming JSON is hydrated through the implementation's constructor (only simple types and `*\Api\Data\*` types are accepted there) and then `set*` methods; unknown keys are a 400 `"foo" is not supported. Correct the field name and try again.` Outgoing objects are read through the declared interface's `get*`/`is*`/`has*` methods with no parameters — `getEntityId()` → `entity_id`, `isActive()` → `active`, `hasOptions()` → `options`. `getExtensionAttributes()` → `extension_attributes`, `getCustomAttributes()` → `custom_attributes` (EAV, `magekwik-magento:data`).
 - Key names convert camelCase↔snake_case both ways; avoid digits next to underscores in field names (`default_shipping1`, not `default_shipping_1`).
 - A method returning `void`/`null` produces `[]`; returning `true` produces `true` (the usual `delete()` shape). An associative array declared `string[]` is re-indexed to a JSON list — return an `Api/Data` object when keys matter.
 
@@ -46,11 +46,11 @@ Path variable names must equal the method parameter names (`/V1/brands/:entityId
 
 ### Example: a repository published as CRUD routes
 
-For the `BrandRepositoryInterface` from `magento:data` (`save`, `getById`, `getList`, `deleteById`):
+For the `BrandRepositoryInterface` from `magekwik-magento:data` (`save`, `getById`, `getList`, `deleteById`):
 
 ```xml
 <?xml version="1.0"?>
-<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magekwik-magento:module:Magento_Webapi:etc/webapi.xsd">
     <route url="/V1/acme/brands" method="GET">
         <service class="Acme\Catalog\Api\BrandRepositoryInterface" method="getList"/>
         <resources><resource ref="Acme_Catalog::brands"/></resources>

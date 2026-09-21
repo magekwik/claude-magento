@@ -1,9 +1,9 @@
 ---
 name: review
-description: "Review a diff, branch, or GitHub PR for Magento-specific defects using the magento:code-reviewer agent. Usage: /magento:review [branch|PR-number] [--comment]"
+description: "Review a diff, branch, or GitHub PR for Magento-specific defects using the magekwik-magento:code-reviewer agent. Usage: /magekwik-magento:review [branch|PR-number] [--comment]"
 ---
 
-# /magento:review
+# /magekwik-magento:review
 
 Arguments given: `$ARGUMENTS`
 
@@ -15,7 +15,7 @@ Arguments given: `$ARGUMENTS`
   - an integer → **PR** mode (`N`)
   - any other single word → **branch** mode
   - `--comment` is allowed only together with a PR number; otherwise say `--comment requires a PR number` and stop.
-  - anything else → print `usage: /magento:review [branch|PR-number] [--comment]` and stop.
+  - anything else → print `usage: /magekwik-magento:review [branch|PR-number] [--comment]` and stop.
 - Untracked-file filter (local and branch modes only — PR mode never sees untracked files): an untracked path is reviewed only if ALL of (a) it starts with `app/`, `lib/`, `dev/`, `setup/`, or `pub/` (but not `pub/static/` or `pub/media/`), or it is a root-level `composer.json`, `composer.lock`, `.htaccess`, `nginx.conf*`, `phpcs.xml*`, `phpstan.neon*`, `grunt-config*`, or `Gruntfile*`; (b) it is a text file with one of these extensions: `.php .phtml .xml .js .less .css .scss .graphqls .json .csv .html .yml .yaml .neon .dist .sample .sh .env`; (c) it is ≤ 200 KB. Binary files are never included, regardless of path or extension. Paths that fail the filter are skipped, not added to the diff or touched files, and collected for reporting: after the findings are presented (step 3), print one line, `Untracked files not reviewed: <path>, <path>, …` (omit the line if nothing was skipped).
 - **local**: determine the base branch:
   `base=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)` — keep it as `origin/<name>` (the local branch of that name may not exist); if empty, use `main` if `git show-ref --verify --quiet refs/heads/main` succeeds, else `master`.
@@ -27,7 +27,7 @@ Arguments given: `$ARGUMENTS`
 
 ## 2. Dispatch the reviewer
 
-Call the Agent tool with `subagent_type: "magento:code-reviewer"` and this prompt, placeholders filled:
+Call the Agent tool with `subagent_type: "magekwik-magento:code-reviewer"` and this prompt, placeholders filled:
 
 ```
 Review this Magento 2 change. Mode: <local | branch NAME | PR #N>.

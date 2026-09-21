@@ -7,7 +7,7 @@ description: Magento 2 code quality tooling — PHPCS with the Magento2 coding s
 
 *Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).*
 
-Rules: see `magento:conventions` Q1–Q6 (and A1, A9, S3 where a sniff enforces them). This skill cites them by ID and does not restate them.
+Rules: see `magekwik-magento:conventions` Q1–Q6 (and A1, A9, S3 where a sniff enforces them). This skill cites them by ID and does not restate them.
 
 ## When to use
 
@@ -18,9 +18,9 @@ Rules: see `magento:conventions` Q1–Q6 (and A1, A9, S3 where a sniff enforces 
 
 ## When not to
 
-- Writing the module, schema, API or theme code itself → `magento:module`, `magento:data`, `magento:api`, `magento:frontend-luma`, `magento:frontend-hyva`.
-- Running `bin/magento`, deploying, caches, upgrades, Xdebug → `magento:ops`.
-- The rule *behind* a finding (why no `ObjectManager`, why escape output) → `magento:conventions`; this skill only tells you which tool reports it and how to run the tool.
+- Writing the module, schema, API or theme code itself → `magekwik-magento:module`, `magekwik-magento:data`, `magekwik-magento:api`, `magekwik-magento:frontend-luma`, `magekwik-magento:frontend-hyva`.
+- Running `bin/magento`, deploying, caches, upgrades, Xdebug → `magekwik-magento:ops`.
+- The rule *behind* a finding (why no `ObjectManager`, why escape output) → `magekwik-magento:conventions`; this skill only tells you which tool reports it and how to run the tool.
 
 ## Decision guide
 

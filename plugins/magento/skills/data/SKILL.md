@@ -7,7 +7,7 @@ description: Magento 2 persistence — declarative db_schema.xml and whitelist, 
 
 *Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).*
 
-Rules: see `magento:conventions` A4–A7, P1, P2. This skill cites them by ID and does not restate them.
+Rules: see `magekwik-magento:conventions` A4–A7, P1, P2. This skill cites them by ID and does not restate them.
 
 ## When to use
 
@@ -19,9 +19,9 @@ Rules: see `magento:conventions` A4–A7, P1, P2. This skill cites them by ID an
 
 ## When not to
 
-- Business logic, `di.xml` wiring, plugins, observers, cron, console commands, controllers → `magento:module`.
-- Exposing a repository over REST or GraphQL (`webapi.xml`, `schema.graphqls`, ACL resources) → `magento:api`.
-- Rendering the data (templates, layout, ViewModels) → `magento:frontend-luma` or `magento:frontend-hyva`.
+- Business logic, `di.xml` wiring, plugins, observers, cron, console commands, controllers → `magekwik-magento:module`.
+- Exposing a repository over REST or GraphQL (`webapi.xml`, `schema.graphqls`, ACL resources) → `magekwik-magento:api`.
+- Rendering the data (templates, layout, ViewModels) → `magekwik-magento:frontend-luma` or `magekwik-magento:frontend-hyva`.
 
 ## Decision guide
 

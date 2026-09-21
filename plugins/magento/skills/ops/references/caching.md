@@ -1,6 +1,6 @@
 # Caching: cache types, full-page cache, Varnish, LiteMage, Redis/Valkey
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (P3 page cacheability, P7 tagged application cache).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (P3 page cacheability, P7 tagged application cache).
 
 Three layers, top to bottom: the HTTP full-page cache (built-in PHP FPC, Varnish or LiteMage — one of them), the application cache types behind `bin/magento cache:*` (file system by default, Redis/Valkey in production), and the browser/CDN cache driven by `Cache-Control` and static-file versioning. Each has its own invalidation path; most "I cleared the cache and nothing changed" tickets are about the wrong layer.
 
@@ -49,7 +49,7 @@ Verify: `curl -sI https://store.example/ | grep -i x-magento` on a category page
 
 ### ESI and private content with Varnish
 
-A layout block with a `ttl` attribute (`<block … ttl="3600"/>`, e.g. `catalog.topnav` in `Magento_Theme/layout/default.xml`) is rendered as `<esi:include src="…/page_cache/block/esi/blocks/…/handles/…"/>` when Varnish is the caching application; Varnish assembles it with its own TTL and its tags are excluded from the page's `X-Magento-Tags`. `system/full_page_cache/handles_size` (default `100`) caps the handles accepted by that endpoint. The ESI URL is forced to `http` — Varnish does not fetch ESI over TLS, so the backend must answer plain HTTP on the backend port. Everything customer-specific stays client-side: customer-data sections (Luma; `etc/frontend/sections.xml` lists the POST/PUT actions that invalidate each section, the `private_content_version` cookie versions them) or Hyvä private content — `magento:frontend-luma`/`magento:frontend-hyva`, H4/P3. Do not put per-customer data in an ESI block; it would be cached per URL like any other fragment.
+A layout block with a `ttl` attribute (`<block … ttl="3600"/>`, e.g. `catalog.topnav` in `Magento_Theme/layout/default.xml`) is rendered as `<esi:include src="…/page_cache/block/esi/blocks/…/handles/…"/>` when Varnish is the caching application; Varnish assembles it with its own TTL and its tags are excluded from the page's `X-Magento-Tags`. `system/full_page_cache/handles_size` (default `100`) caps the handles accepted by that endpoint. The ESI URL is forced to `http` — Varnish does not fetch ESI over TLS, so the backend must answer plain HTTP on the backend port. Everything customer-specific stays client-side: customer-data sections (Luma; `etc/frontend/sections.xml` lists the POST/PUT actions that invalidate each section, the `private_content_version` cookie versions them) or Hyvä private content — `magekwik-magento:frontend-luma`/`magekwik-magento:frontend-hyva`, H4/P3. Do not put per-customer data in an ESI block; it would be cached per URL like any other fragment.
 
 ### Common FPC mistakes
 

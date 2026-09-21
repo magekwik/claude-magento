@@ -1,6 +1,6 @@
 # Data and schema patches
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A6 for patches vs legacy scripts, A5 for data access, A1/A9 for construction).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A6 for patches vs legacy scripts, A5 for data access, A1/A9 for construction).
 
 ## What a patch is
 

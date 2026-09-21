@@ -1,6 +1,6 @@
 # Plugins vs observers
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A1, A2, A3 apply throughout).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A1, A2, A3 apply throughout).
 
 **Plugin** (interceptor): wraps one public method of one class or interface; can read/replace arguments, read/replace the result, or skip the call. **Observer**: runs when a named event is dispatched; receives the event payload; its return value is ignored. Choose by asking whether you must change the method's input/output (plugin) or only react to the fact that something happened (observer).
 

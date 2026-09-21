@@ -66,6 +66,6 @@ Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by rele
 
 ## How this file is used
 
-The `magento:code-reviewer` agent (behind `/magento:review`) reads it as its checklist and cites findings by rule ID.
-`/magento:init` copies its body into the project's `.claude/rules/magento.md`, dropping the Hyvä section when no theme is Hyvä-based and the Luma section when every theme's parent chain is Hyvä.
+The `magekwik-magento:code-reviewer` agent (behind `/magekwik-magento:review`) reads it as its checklist and cites findings by rule ID.
+`/magekwik-magento:init` copies its body into the project's `.claude/rules/magento.md`, dropping the Hyvä section when no theme is Hyvä-based and the Luma section when every theme's parent chain is Hyvä.
 Other `magento:*` skills cite rules by ID (for example "see conventions A1") instead of restating them.

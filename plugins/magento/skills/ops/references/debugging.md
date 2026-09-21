@@ -1,6 +1,6 @@
 # Debugging: logs, reports, Xdebug, profiling, reading traces
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A1 DI, A2 plugins, S4 no secrets in logs).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A1 DI, A2 plugins, S4 no secrets in logs).
 
 Paths are relative to the Magento root; prefix `bin/magento` with the environment prefix from `references/dev-envs.md`, and remember that inside a container the log files live in the container's `var/` (a bind mount in Warden/DDEV/Compose, a synced volume in docker-magento — `bin/copyfromcontainer var/log` there).
 
@@ -73,7 +73,7 @@ Every class with a plugin is instantiated as `<Class>\Interceptor` (generated in
 
 | Message | Cause | Fix |
 |---|---|---|
-| `Area code is not set` | CLI command, cron job, consumer or unit test touched area-scoped config, layout, design or URLs with no area | `State::emulateAreaCode()` around the code, or `setAreaCode()` once (`magento:module` `cron-and-cli.md`) |
+| `Area code is not set` | CLI command, cron job, consumer or unit test touched area-scoped config, layout, design or URLs with no area | `State::emulateAreaCode()` around the code, or `setAreaCode()` once (`magekwik-magento:module` `cron-and-cli.md`) |
 | `Area code is already set` | `setAreaCode()` called twice (framework already set it) | use `emulateAreaCode()`, or wrap in `try/catch LocalizedException` |
 | `Class "Acme\Catalog\Model\Foo" does not exist` (`ReflectionException`) | typo in `di.xml`/layout/`webapi.xml` class string; namespace does not match `app/code/<Vendor>/<Module>/` path; module disabled; `registration.php` missing | fix the string/path; `module:status`; `cache:clean config` |
 | `Source class "…" for "…Factory" generation does not exist` | a `*Factory` type-hint for a class that is not there | create the class or fix the name; then delete the stale `generated/code/.../Factory.php` |

@@ -1,6 +1,6 @@
 # `bin/magento` command reference
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A6 schema, L5 build output, P5 indexers).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A6 schema, L5 build output, P5 indexers).
 
 Options and defaults below are from `bin/magento <command> --help` on 2.4.9 and the Experience League CLI pages; where a release differs it is said. Run everything as the file-system owner, from the Magento root, behind the environment prefix (`references/dev-envs.md`). `bin/magento list` prints every command the enabled modules register (`--raw` for a plain list); `--help` on any command is authoritative for the release you are on. Every command accepts `-n` (no interaction), `-q`, `-v|-vv|-vvv` and `--magento-init-params='MAGE_MODE=developer&MAGE_DIRS[cache][path]=/tmp/cache'` to override bootstrap parameters for that one run.
 
@@ -77,7 +77,7 @@ Precedence when the same path is set in several places: environment variables (`
 
 ## Cron
 
-`cron:install [-f\|--force] [-d\|--non-optional]` writes the `#~ MAGENTO START … #~ MAGENTO END` block into the file-system owner's crontab (`* * * * * php bin/magento cron:run 2>&1 | grep -v "Ran jobs by schedule" >> var/log/magento.cron.log`); `cron:remove` deletes the block; `cron:run [--group=<id>] [--exclude-group=<id>]` schedules pending rows then runs those that are due — run it twice by hand to see a job execute. `cron_schedule` and `var/log/cron.log` are the audit trail. Job authoring is in `magento:module` `cron-and-cli.md`.
+`cron:install [-f\|--force] [-d\|--non-optional]` writes the `#~ MAGENTO START … #~ MAGENTO END` block into the file-system owner's crontab (`* * * * * php bin/magento cron:run 2>&1 | grep -v "Ran jobs by schedule" >> var/log/magento.cron.log`); `cron:remove` deletes the block; `cron:run [--group=<id>] [--exclude-group=<id>]` schedules pending rows then runs those that are due — run it twice by hand to see a job execute. `cron_schedule` and `var/log/cron.log` are the audit trail. Job authoring is in `magekwik-magento:module` `cron-and-cli.md`.
 
 ## Admin users
 

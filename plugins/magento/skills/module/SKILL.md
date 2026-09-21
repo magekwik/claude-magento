@@ -7,7 +7,7 @@ description: Build and modify Magento 2 modules — scaffolding, di.xml plugins/
 
 *Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).*
 
-Rules: see `magento:conventions` A1–A10, P6, S1. This skill cites them by ID and does not restate them.
+Rules: see `magekwik-magento:conventions` A1–A10, P6, S1. This skill cites them by ID and does not restate them.
 
 ## When to use
 
@@ -20,9 +20,9 @@ Rules: see `magento:conventions` A1–A10, P6, S1. This skill cites them by ID a
 
 ## When not to
 
-- Database schema, data patches, models/resource models/collections, repositories, EAV or extension attributes → `magento:data`.
-- REST or GraphQL endpoints, `webapi.xml`, integration tokens → `magento:api`.
-- Templates, layout XML, JavaScript, CSS → `magento:frontend-luma` or `magento:frontend-hyva`.
+- Database schema, data patches, models/resource models/collections, repositories, EAV or extension attributes → `magekwik-magento:data`.
+- REST or GraphQL endpoints, `webapi.xml`, integration tokens → `magekwik-magento:api`.
+- Templates, layout XML, JavaScript, CSS → `magekwik-magento:frontend-luma` or `magekwik-magento:frontend-hyva`.
 
 ## Decision guide
 
@@ -32,7 +32,7 @@ Rules: see `magento:conventions` A1–A10, P6, S1. This skill cites them by ID a
 | Replace an interface implementation everywhere | `preference` in `di.xml` (last resort) | `di-xml.md` |
 | Same class, different constructor args | Virtual type | `di-xml.md` |
 | React after something happened (order placed, entity saved) | Observer + `events.xml` (area-scoped) | `plugins-vs-observers.md` |
-| Add data to an entity for other modules/APIs | Extension attribute | `magento:data` |
+| Add data to an entity for other modules/APIs | Extension attribute | `magekwik-magento:data` |
 | Scheduled work | Cron job + `crontab.xml` group | `cron-and-cli.md` |
 | Developer/ops command | `Console/Command` + `di.xml` `commandList` | `cron-and-cli.md` |
 | Admin action | Controller with `ADMIN_RESOURCE` + `acl.xml` + `menu.xml` | `scaffold.md` |

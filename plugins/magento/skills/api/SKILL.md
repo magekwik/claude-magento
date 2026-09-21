@@ -7,7 +7,7 @@ description: Magento 2 web APIs — webapi.xml REST routes, GraphQL schema and r
 
 *Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).*
 
-Rules: see `magento:conventions` A4, S1, S2, S6. This skill cites them by ID and does not restate them.
+Rules: see `magekwik-magento:conventions` A4, S1, S2, S6. This skill cites them by ID and does not restate them.
 
 ## When to use
 
@@ -18,9 +18,9 @@ Rules: see `magento:conventions` A4, S1, S2, S6. This skill cites them by ID and
 
 ## When not to
 
-- The repository, data interfaces, search results or extension attributes the API will expose → `magento:data` (build the service contract there first; this skill only publishes it).
-- Admin UI (controllers, menus, grids), plugins, observers, `di.xml` wiring → `magento:module`.
-- Rendering anything in a theme → `magento:frontend-luma` or `magento:frontend-hyva`.
+- The repository, data interfaces, search results or extension attributes the API will expose → `magekwik-magento:data` (build the service contract there first; this skill only publishes it).
+- Admin UI (controllers, menus, grids), plugins, observers, `di.xml` wiring → `magekwik-magento:module`.
+- Rendering anything in a theme → `magekwik-magento:frontend-luma` or `magekwik-magento:frontend-hyva`.
 
 ## Decision guide
 
@@ -28,7 +28,7 @@ Rules: see `magento:conventions` A4, S1, S2, S6. This skill cites them by ID and
 |---|---|---|
 | System-to-system or admin-tool integration (ERP, PIM, scripts) | REST route in `webapi.xml` | `rest.md` |
 | Storefront data for Hyvä, PWA Studio or any headless frontend | GraphQL query/mutation + resolver | `graphql.md` |
-| Both | One `Api/*Interface` service contract; REST maps it directly, the GraphQL resolver calls it | `rest.md`, `graphql.md`, `magento:data` |
+| Both | One `Api/*Interface` service contract; REST maps it directly, the GraphQL resolver calls it | `rest.md`, `graphql.md`, `magekwik-magento:data` |
 | Caller is a store admin or an integration | Admin token, or an integration's OAuth credentials; route guarded by your own `acl.xml` resource | `acl-and-auth.md` |
 | Caller is a logged-in customer acting on own data | Customer token; `<resource ref="self"/>` + `%customer_id%` parameter | `acl-and-auth.md` |
 | Genuinely public catalogue read | `<resource ref="anonymous"/>` (S1: nothing else) | `acl-and-auth.md` |
@@ -59,7 +59,7 @@ Token endpoints: `POST /V1/integration/customer/token` (customers, 1 h); `POST /
 
 ```xml
 <?xml version="1.0"?>
-<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magekwik-magento:module:Magento_Webapi:etc/webapi.xsd">
     <route url="/V1/acme/brands" method="GET">
         <service class="Acme\Catalog\Api\BrandListInterface" method="getNames"/>
         <resources>

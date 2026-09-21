@@ -1,6 +1,6 @@
 # Layout XML — files, handles, instructions and debugging
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (L1 and P3 apply throughout).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (L1 and P3 apply throughout).
 
 Layout XML declares the tree of containers and blocks for a page. The framework merges every layout file that matches the page's handles, builds the structure, instantiates the blocks and renders them. Change pages here first; override a template only when the markup itself must change (L1).
 

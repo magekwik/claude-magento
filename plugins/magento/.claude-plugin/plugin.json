@@ -1,8 +1,8 @@
 {
-  "name": "magento",
-  "displayName": "Magento",
-  "version": "1.0.0",
-  "description": "Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magento:init) and Magento-aware code review (/magento:review).",
+  "name": "magekwik-magento",
+  "displayName": "Magekwik Magento Toolkit",
+  "version": "1.0.1",
+  "description": "Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magekwik-magento:init) and Magento-aware code review (/magekwik-magento:review).",
   "author": {
     "name": "Magekwik",
     "url": "https://magekwik.com"

@@ -1,6 +1,6 @@
 # Templates, ViewModels and escaping
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (L1, L2, S3 and Q5 apply throughout).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (L1, L2, S3 and Q5 apply throughout).
 
 A `.phtml` template is the markup half of a block: `Magento\Framework\View\Element\Template::_toHtml()` resolves the `template` name through the theme fallback, hands the file to the PHP template engine, and the engine `include`s it with `$block`, `$escaper` and a few helpers in scope. Everything the template shows comes from `$block` (layout arguments, child blocks) or from a ViewModel; the template itself decides only *how* to print it.
 

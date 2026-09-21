@@ -1,6 +1,6 @@
 # Tailwind CSS, Alpine.js, `window.hyva`, private content and ViewModels
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release); Hyvä Theme 1.2–1.5.* Rules cited by ID are in `magento:conventions` (H1, H3, H4, S3, P3 apply throughout).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release); Hyvä Theme 1.2–1.5.* Rules cited by ID are in `magekwik-magento:conventions` (H1, H3, H4, S3, P3 apply throughout).
 
 Hyvä replaces Luma's RequireJS/jQuery/Knockout/LESS stack with a `styles.css` compiled by Tailwind from the classes found in your templates, Alpine.js 3 for behaviour, a small `window.hyva` helper object, and native `fetch()`. Every piece of JavaScript lives in the `.phtml` that uses it. Hyvä 1.2–1.3 build with Tailwind 3 (`tailwind.config.js`), 1.4–1.5 with Tailwind 4 (CSS-first, `@source`/`@theme` in `tailwind-source.css`); the sections below say which applies.
 
@@ -136,7 +136,7 @@ Defined in `Hyva_Theme::page/js/hyva.phtml` (block `head.hyva-scripts`, in `<hea
 
 Globals from `Hyva_Theme::page/js/variables.phtml`: `BASE_URL`, `CURRENT_STORE_CODE`, `COOKIE_CONFIG`. There is no `mage/url`, `mage/translate` or `mage/template`: build URLs server-side (`'<?= $escaper->escapeJs($block->getUrl('acme/notice/dismiss')) ?>'` or `BASE_URL + 'acme/notice/dismiss'`), translate with `__()` in PHP, and render markup with `<template>` elements or `hyva.replaceDomElement`.
 
-`fetch()` against Magento controllers (docs pattern): JSON — `fetch(url + '?form_key=' + hyva.getFormKey(), { method: 'post', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } })`; form — `fetch(url, { method: 'post', body: new URLSearchParams({ form_key: hyva.getFormKey(), sku }), headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' } })`. Add `'X-Requested-With': 'XMLHttpRequest'` when the response must keep the customer session personalised (the page-cache depersonalise plugin skips XHR requests). The controller side is `magento:module` (S2: `HttpPostActionInterface`).
+`fetch()` against Magento controllers (docs pattern): JSON — `fetch(url + '?form_key=' + hyva.getFormKey(), { method: 'post', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } })`; form — `fetch(url, { method: 'post', body: new URLSearchParams({ form_key: hyva.getFormKey(), sku }), headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' } })`. Add `'X-Requested-With': 'XMLHttpRequest'` when the response must keep the customer session personalised (the page-cache depersonalise plugin skips XHR requests). The controller side is `magekwik-magento:module` (S2: `HttpPostActionInterface`).
 
 ## Hyvä events
 

@@ -1,6 +1,6 @@
 # Upgrades and patches
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A7 never edit `vendor/`, patch through Composer).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A7 never edit `vendor/`, patch through Composer).
 
 ## Release types
 
@@ -96,7 +96,7 @@ Code: `git checkout <previous tag>` + `composer install` (the old `composer.lock
 - `composer why-not magento/product-community-edition <target>`; then `composer update --dry-run` with the new constraint.
 - Vendor changelog for the target line; Marketplace extensions publish a supported-version list.
 - PHP: every extension must load on the target PHP (PHPCompatibility sniff; `php -l` is not enough — deprecations become fatals across 8.x).
-- Frontend: Luma extensions vs Hyvä (`magento:frontend-hyva` H2), jQuery/RequireJS changes between releases; layout `htmlClass` values are validated by `htmlClassType` in `Magento/Framework/View/Layout/etc/elements.xsd`, whose pattern changed in 2.4.7 (2.4.6: `[a-zA-Z][a-zA-Z\d\-_:]*(\s…)*`; 2.4.7+: `[a-zA-Z\d\-_/:.\[\]&@() ]*`), so Tailwind class lists that validate on 2.4.7+ fail developer-mode XSD validation on 2.4.4–2.4.6.
+- Frontend: Luma extensions vs Hyvä (`magekwik-magento:frontend-hyva` H2), jQuery/RequireJS changes between releases; layout `htmlClass` values are validated by `htmlClassType` in `Magento/Framework/View/Layout/etc/elements.xsd`, whose pattern changed in 2.4.7 (2.4.6: `[a-zA-Z][a-zA-Z\d\-_:]*(\s…)*`; 2.4.7+: `[a-zA-Z\d\-_/:.\[\]&@() ]*`), so Tailwind class lists that validate on 2.4.7+ fail developer-mode XSD validation on 2.4.4–2.4.6.
 - Run the integration/MFTF suites you have; at minimum place an order end-to-end on staging with every payment/shipping method.
 - Third-party modules that ship `InstallSchema`/`UpgradeSchema` still run on 2.4 but block `--dry-run` accuracy — ask the vendor for declarative schema (A6).
 

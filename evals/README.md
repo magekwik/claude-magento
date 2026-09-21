@@ -1,6 +1,6 @@
 # Evals
 
-Behavioural checks for the `magento` plugin. Each scenario in `scenarios/<name>/` has:
+Behavioural checks for the `magekwik-magento` plugin. Each scenario in `scenarios/<name>/` has:
 
 - `prompt.md` — front matter `fixture: <name>` (a directory under `fixtures/`), then the prompt.
 - `setup.sh` (optional) — runs in the work dir before the prompt (e.g. plants a bad diff).

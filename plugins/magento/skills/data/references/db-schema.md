@@ -1,6 +1,6 @@
 # Declarative schema: `db_schema.xml` and the whitelist
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A6 for schema, A5 for access, A7 for ownership).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A6 for schema, A5 for access, A7 for ownership).
 
 ## How it works
 

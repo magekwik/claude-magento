@@ -1,6 +1,6 @@
 # Theme structure, LESS, grunt and static content deploy
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (L4 and L5 apply throughout).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (L4 and L5 apply throughout).
 
 Luma styling is LESS compiled per theme and locale into two CSS files. Nothing is committed under `pub/static` or `var/view_preprocessed` (L5): those directories are build output, regenerated on demand in developer/default mode and by `setup:static-content:deploy` in production.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Idempotently writes the /magento:init outputs into a project.
+# Idempotently writes the /magekwik-magento:init outputs into a project.
 # Usage: apply-init.sh --block <file> --rules <file> [--root <dir>]
 set -euo pipefail
 

@@ -1,6 +1,6 @@
 # ACL, authentication and CSRF
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (S1 authorisation, S2 CSRF and HTTP verbs, S4 secrets, S6 input). Admin controllers, menus and the module scaffold are in `magento:module`; this file covers the permission model they share with the web API, how callers authenticate, and what protects a browser-facing controller.
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (S1 authorisation, S2 CSRF and HTTP verbs, S4 secrets, S6 input). Admin controllers, menus and the module scaffold are in `magekwik-magento:module`; this file covers the permission model they share with the web API, how callers authenticate, and what protects a browser-facing controller.
 
 ## `acl.xml`
 
@@ -29,7 +29,7 @@
 
 | Consumer | Where the id goes |
 |---|---|
-| Admin controller | `public const ADMIN_RESOURCE = 'Acme_Catalog::brands_manage';` on a `Magento\Backend\App\Action` subclass — `_isAllowed()` checks it before `execute()`; failure renders *Access Denied* (`magento:module`) |
+| Admin controller | `public const ADMIN_RESOURCE = 'Acme_Catalog::brands_manage';` on a `Magento\Backend\App\Action` subclass — `_isAllowed()` checks it before `execute()`; failure renders *Access Denied* (`magekwik-magento:module`) |
 | Admin menu | `etc/adminhtml/menu.xml` `<add … resource="Acme_Catalog::brands"/>` — hides the entry from roles without it |
 | Config section | `etc/adminhtml/system.xml` `<section><resource>Acme_Catalog::config</resource>` (Q6) |
 | REST/SOAP route | `etc/webapi.xml` `<resources><resource ref="Acme_Catalog::brands_view"/></resources>` |
@@ -110,7 +110,7 @@ Implement one of the ten `Magento\Framework\App\Action\Http*ActionInterface`s �
 
 `CsrfValidator` (frontend area) accepts a request when it is not POST, **or** it is XHR (`X-Requested-With: XMLHttpRequest`), **or** `form_key` in the request equals the session's key (`Magento\Framework\Data\Form\FormKey\Validator`, constant-time compare). Otherwise it throws `InvalidRequestException` → redirect to the referer (or base URL) with the message `Invalid Form Key. Please refresh the page.`
 
-- Templates: `<?= $block->getBlockHtml('formkey') ?>` renders `<input name="form_key" type="hidden" value="…"/>`. On the storefront the key is delivered FPC-safely by `Magento_PageCache`'s `form-key-provider.js`, which keeps it in the `form_key` cookie and fills every `input[name="form_key"]`; `lib/web/mage/common.js` then copies that value into a non-GET form on submit when the form lacks its own and its action is on the site's base URL — a form with an empty page (no `form_key` input anywhere) or an external action gets nothing. The global `FORM_KEY` JS variable exists only in the admin (`Magento_Backend`'s `require_js.phtml`); storefront scripts read the cookie or the hidden input. PHP: `Magento\Framework\Data\Form\FormKey::getFormKey()`. Hyvä has its own helper — see `magento:frontend-hyva`.
+- Templates: `<?= $block->getBlockHtml('formkey') ?>` renders `<input name="form_key" type="hidden" value="…"/>`. On the storefront the key is delivered FPC-safely by `Magento_PageCache`'s `form-key-provider.js`, which keeps it in the `form_key` cookie and fills every `input[name="form_key"]`; `lib/web/mage/common.js` then copies that value into a non-GET form on submit when the form lacks its own and its action is on the site's base URL — a form with an empty page (no `form_key` input anywhere) or an external action gets nothing. The global `FORM_KEY` JS variable exists only in the admin (`Magento_Backend`'s `require_js.phtml`); storefront scripts read the cookie or the hidden input. PHP: `Magento\Framework\Data\Form\FormKey::getFormKey()`. Hyvä has its own helper — see `magekwik-magento:frontend-hyva`.
 - The form key is per session and rotates on login; a cached page that embeds it is the classic *Invalid Form Key* bug — the key must come from private content (customer-data sections / Hyvä private content), never from FPC-cached markup (P3).
 - Admin area: `Magento\Backend\App\Request\BackendValidator` (via `AbstractAction::_processUrlKeys()`) requires `form_key` on every POST with no XHR exemption, and the secret `key` URL parameter on every other request while *Stores → Configuration → Advanced → Admin → Security → Add Secret Key to URLs* is on (the default); admin links must therefore come from `$block->getUrl()` / `UrlInterface`. Failure redirects to the dashboard (or returns `{"error": true, "message": …}` when `isAjax=1`).
 

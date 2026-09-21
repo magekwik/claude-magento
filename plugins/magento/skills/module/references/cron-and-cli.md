@@ -1,6 +1,6 @@
 # Cron jobs and console commands
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (P6 for cron; A1, A9 throughout).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (P6 for cron; A1, A9 throughout).
 
 ## Cron jobs
 
@@ -14,7 +14,7 @@ The system crontab runs `bin/magento cron:run` every minute. Each run, for each 
 
 ```xml
 <?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magekwik-magento:module:Magento_Cron:etc/crontab.xsd">
     <group id="acme_catalog">
         <job name="acme_catalog_badge_refresh" instance="Acme\Catalog\Cron\RefreshBadges" method="execute">
             <schedule>15 2 * * *</schedule>
@@ -71,7 +71,7 @@ Idempotency and bounds (P6):
 
 ```xml
 <?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/cron_groups.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magekwik-magento:module:Magento_Cron:etc/cron_groups.xsd">
     <group id="acme_catalog">
         <schedule_generate_every>15</schedule_generate_every>
         <schedule_ahead_for>20</schedule_ahead_for>

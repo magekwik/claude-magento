@@ -1,4 +1,4 @@
 ---
 fixture: luma-skeleton
 ---
-/magento:init
+/magekwik-magento:init

@@ -1,6 +1,6 @@
 # GraphQL: schema, resolvers, exceptions, caching, testing
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A1 DI, A4 contracts, A8 dependencies, P1 no per-row loads, P3/P7 caching, S6 input validation). GraphQL is the storefront API (Hyvä checkout, PWA Studio, any headless frontend); the data it returns comes from service contracts built in `magento:data`.
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A1 DI, A4 contracts, A8 dependencies, P1 no per-row loads, P3/P7 caching, S6 input validation). GraphQL is the storefront API (Hyvä checkout, PWA Studio, any headless frontend); the data it returns comes from service contracts built in `magekwik-magento:data`.
 
 ## Shape of a GraphQL module
 

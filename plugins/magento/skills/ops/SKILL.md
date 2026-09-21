@@ -7,7 +7,7 @@ description: Running and debugging Magento 2 — bin/magento workflows (setup:up
 
 *Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).*
 
-Rules: see `magento:conventions` A6, A7, P3, P5, L5. This skill cites them by ID and does not restate them.
+Rules: see `magekwik-magento:conventions` A6, A7, P3, P5, L5. This skill cites them by ID and does not restate them.
 
 Every `bin/magento` line below is written as `$MAGE bin/magento …`. `$MAGE` is the command prefix for the project's environment — empty for a native install, `warden env exec php-fpm` for Warden, `ddev exec` for DDEV, `docker compose exec <php-service>` for a plain Compose stack; `references/dev-envs.md` says how to tell which one you are in. Composer, `php` and `grunt`/`npm` run behind the same prefix (inside the container, never on the host against the container's files).
 
@@ -22,8 +22,8 @@ Every `bin/magento` line below is written as `$MAGE bin/magento …`. `$MAGE` is
 
 ## When not to
 
-- Writing the module, schema, API or theme code itself → `magento:module`, `magento:data`, `magento:api`, `magento:frontend-luma`, `magento:frontend-hyva`.
-- Coding-standard checks, tests, review → `magento:quality`.
+- Writing the module, schema, API or theme code itself → `magekwik-magento:module`, `magekwik-magento:data`, `magekwik-magento:api`, `magekwik-magento:frontend-luma`, `magekwik-magento:frontend-hyva`.
+- Coding-standard checks, tests, review → `magekwik-magento:quality`.
 - Adobe Commerce on cloud infrastructure (`ece-tools`, `.magento.env.yaml`, Fastly) — out of scope; this skill is on-premises Open Source.
 
 ## Decision guide
@@ -56,7 +56,7 @@ When answering "what do I run" for a developer-mode project, state explicitly th
 |---|---|
 | 500, "There has been an error processing your request … Error log record number: `<id>`" | `var/report/<id>` (nested under `var/report/xx/yy/` when `dir_nesting_level` is set in `pub/errors/local.xml`) and `var/log/exception.log`; developer mode prints the trace instead |
 | Completely blank page | PHP fatal before Magento's handler (memory, parse error): PHP-FPM and web-server error logs (`docker compose logs`, `warden env logs php-fpm nginx`, `ddev logs`) |
-| `Area code is not set` in a CLI command, cron job or consumer | the code needs `State::emulateAreaCode()` (or `setAreaCode()` once) — `magento:module` `cron-and-cli.md` |
+| `Area code is not set` in a CLI command, cron job or consumer | the code needs `State::emulateAreaCode()` (or `setAreaCode()` once) — `magekwik-magento:module` `cron-and-cli.md` |
 | `Class "Acme\…" does not exist`, `Source class "…" for "…Factory" generation does not exist` | typo in the `type`/`class` string, namespace ≠ path under `app/code/`, module not registered/enabled, or stale `generated/`: `rm -rf generated/code generated/metadata` (developer) / `setup:di:compile` (production) |
 | "Too few arguments to … ::__construct()" or a TypeError creating an object after a constructor change | stale interceptor/proxy in `generated/code`, or stale `generated/metadata` — same fix |
 | A `di.xml`/plugin change is ignored | `cache:clean config compiled_config`; if `generated/metadata/global.php` exists the compiled DI wins regardless of `MAGE_MODE` — delete it or recompile |

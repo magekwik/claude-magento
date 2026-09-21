@@ -1,6 +1,6 @@
 # EAV attributes: products, categories, customers, addresses
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A6 patches, A7 no core-table columns, P1/P5 loading and indexing).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A6 patches, A7 no core-table columns, P1/P5 loading and indexing).
 
 ## What you get, and where it lives
 
@@ -197,7 +197,7 @@ class AddCustomerLoyaltyIdAttribute implements DataPatchInterface
 
 - `system => false` and `user_defined => true` together make it a real custom attribute: it is returned in `custom_attributes` by the customer API (`system` attributes are not) and editable in admin.
 - Customers have exactly one attribute set (`ATTRIBUTE_SET_ID_CUSTOMER` = 1; addresses `AddressMetadataInterface::ATTRIBUTE_SET_ID_ADDRESS` = 2); `addAttributeToSet` with group `null` uses the default group.
-- `used_in_forms` decides which forms *accept, validate and save* the attribute; saving it goes through the customer attribute resource model, which rewrites `customer_form_attribute`. Form codes: customer `adminhtml_customer`, `customer_account_create`, `customer_account_edit`, `checkout_register`, `adminhtml_checkout`; address `adminhtml_customer_address`, `customer_address_edit`, `customer_register_address`. The admin customer form renders every attribute with `visible` = 1 automatically; storefront templates do not — the register/edit forms need the input added in the theme (`magento:frontend-luma` / `magento:frontend-hyva`), and the value then round-trips through `CustomerInterface::getCustomAttribute('acme_loyalty_id')`.
+- `used_in_forms` decides which forms *accept, validate and save* the attribute; saving it goes through the customer attribute resource model, which rewrites `customer_form_attribute`. Form codes: customer `adminhtml_customer`, `customer_account_create`, `customer_account_edit`, `checkout_register`, `adminhtml_checkout`; address `adminhtml_customer_address`, `customer_address_edit`, `customer_register_address`. The admin customer form renders every attribute with `visible` = 1 automatically; storefront templates do not — the register/edit forms need the input added in the theme (`magekwik-magento:frontend-luma` / `magekwik-magento:frontend-hyva`), and the value then round-trips through `CustomerInterface::getCustomAttribute('acme_loyalty_id')`.
 - Grid flags need `bin/magento indexer:reindex customer_grid` to show existing customers' values.
 - Address attributes: `AddressMetadataInterface::ENTITY_TYPE_ADDRESS`, the address forms above, and the quote/order address copy needs `fieldset.xml` entries — out of scope here.
 
@@ -214,7 +214,7 @@ $product->getResource()->getAttribute('brand')->getFrontend()->getValue($product
 - Loaded product (`ProductRepositoryInterface::get`, product page): every attribute is available. Listing and search collections load only static columns plus attributes with `used_in_product_listing` = 1 — or those you name with `$collection->addAttributeToSelect('brand')` in your own collection. Do not load products one by one to read an attribute in a listing (P1).
 - Store scope: the value returned is the one for the collection's/repository's store with fallback to the default (`store_id` 0). Saving a store-scoped value through `ProductRepositoryInterface::save` uses the repository's store (`$product->setStoreId()` or the `store_id` argument on REST).
 - Customer: `CustomerInterface::getCustomAttribute('acme_loyalty_id')?->getValue()`; the legacy `Customer` model has `getData()` as well.
-- GraphQL adds a *user-defined* product attribute as a field of `ProductInterface` only when at least one of `comparable`, `filterable`, `filterable_in_search`, `visible_on_front`, `used_in_product_listing`, `used_for_sort_by` is 1 (and offers `custom_attributesV2` for the rest); REST returns every product attribute outside the built-in `ProductInterface::ATTRIBUTES` list in `custom_attributes` (`magento:api`).
+- GraphQL adds a *user-defined* product attribute as a field of `ProductInterface` only when at least one of `comparable`, `filterable`, `filterable_in_search`, `visible_on_front`, `used_in_product_listing`, `used_for_sort_by` is 1 (and offers `custom_attributesV2` for the rest); REST returns every product attribute outside the built-in `ProductInterface::ATTRIBUTES` list in `custom_attributes` (`magekwik-magento:api`).
 
 ## After the patch
 

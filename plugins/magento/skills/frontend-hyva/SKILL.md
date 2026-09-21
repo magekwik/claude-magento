@@ -7,9 +7,9 @@ description: Hyvä theme development for Magento 2 — Tailwind CSS, Alpine.js c
 
 *Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release); Hyvä Theme 1.2–1.5 — Alpine.js 3 throughout, Tailwind CSS 3 on 1.2–1.3 and Tailwind CSS 4 on 1.4–1.5 (Hyvä itself requires Magento 2.4.4-p9 / 2.4.5-p8 / 2.4.6-p7 / 2.4.7-p1 or later and PHP 8.1 through 8.4; 1.4.6+ carries PHP 8.5 fixes).*
 
-Rules: see `magento:conventions` H1–H5, S3, P3. This skill cites them by ID and does not restate them.
+Rules: see `magekwik-magento:conventions` H1–H5, S3, P3. This skill cites them by ID and does not restate them.
 
-**Confirm the store is Hyvä before anything else:** the theme's `theme.xml` `<parent>` chain reaches `Hyva/default` (or `Hyva/default-csp`), and `composer.lock` lists `hyva-themes/magento2-theme-module` (the version there is the Hyvä version). `.claude/rules/magento.md` from `/magento:init` records this too. Which Tailwind you have: `web/tailwind/tailwind.config.js` + `postcss.config.js` = Tailwind 3 (1.2–1.3); `web/tailwind/hyva.config.json` + `@import "tailwindcss"` in `tailwind-source.css` = Tailwind 4 (1.4+).
+**Confirm the store is Hyvä before anything else:** the theme's `theme.xml` `<parent>` chain reaches `Hyva/default` (or `Hyva/default-csp`), and `composer.lock` lists `hyva-themes/magento2-theme-module` (the version there is the Hyvä version). `.claude/rules/magento.md` from `/magekwik-magento:init` records this too. Which Tailwind you have: `web/tailwind/tailwind.config.js` + `postcss.config.js` = Tailwind 3 (1.2–1.3); `web/tailwind/hyva.config.json` + `@import "tailwindcss"` in `tailwind-source.css` = Tailwind 4 (1.4+).
 
 ## When to use
 
@@ -21,9 +21,9 @@ Rules: see `magento:conventions` H1–H5, S3, P3. This skill cites them by ID an
 
 ## When not to
 
-- The theme's parent chain ends in `Magento/luma`/`Magento/blank`, or the page is served by the Luma theme fallback (checkout on many Hyvä stores) → `magento:frontend-luma`.
-- Backend behaviour the frontend calls (plugins, observers, `di.xml`, controllers, ACL) → `magento:module`.
-- Data the ViewModel needs (repositories, collections, EAV attributes) → `magento:data`; REST/GraphQL endpoints the page calls → `magento:api`.
+- The theme's parent chain ends in `Magento/luma`/`Magento/blank`, or the page is served by the Luma theme fallback (checkout on many Hyvä stores) → `magekwik-magento:frontend-luma`.
+- Backend behaviour the frontend calls (plugins, observers, `di.xml`, controllers, ACL) → `magekwik-magento:module`.
+- Data the ViewModel needs (repositories, collections, EAV attributes) → `magekwik-magento:data`; REST/GraphQL endpoints the page calls → `magekwik-magento:api`.
 - Hyvä Checkout internals (its own component system and docs) and admin UI components — not covered here.
 
 ## Decision guide
@@ -54,12 +54,12 @@ Two quick tests: *"Would this be a `define([...])`, `x-magento-init` or Knockout
 8. **H2** — A Luma-built extension's templates do render on a Hyvä store view, but its JS throws `require is not defined` and its LESS/CSS is absent. Before writing anything, look for `Hyva_<Vendor><Module>` in `app/code` and `vendor` (composer `hyva-themes/magento2-<vendor>-<module>` or `<vendor>/magento2-hyva-<module>`) and in the Hyvä compatibility module tracker. A compat module registered in `Hyva\CompatModuleFallback\Model\CompatModuleRegistry` (`etc/frontend/di.xml`) overrides `Orig_Module::x.phtml` just by shipping `view/frontend/templates/x.phtml`; a theme override of that template still lives under the *original* module directory (`Orig_Module/templates/x.phtml`).
 9. **H2** — On a Hyvä store view every layout handle gets a `hyva_`-prefixed twin loaded *after* it (`hyva_default`, `hyva_catalog_product_view`) and Luma store views never load them: Hyvä-only blocks in a module go in `hyva_default.xml` etc., and a compat module re-adds there what `hyva-themes/magento2-base-layout-reset` stripped from the core layout. In PHP use `Hyva\Theme\Service\CurrentTheme::isHyva()` (1.4+ also `Hyva\Theme\Service\HyvaThemes`), never a string match on `Hyva/` — child themes have other names.
 10. **H5** — Override by mirroring the parent path in the child theme (`Magento_Theme/templates/html/header.phtml`, `Magento_Catalog/templates/product/view/addtocart.phtml`, Hyvä's own under `Hyva_Theme/templates/…`); find the file with `bin/magento dev:template-hints:enable && bin/magento cache:clean config full_page` (`dev/debug/template_hints_storefront`). Copy the parent's `web/` directory once when creating the theme (that is the Tailwind toolchain), never its template tree. Containers keep the Luma names (`after.body.start`, `header.container`, `page.top`, `top.container`, `columns.top`, `page.messages`, `content`, `sidebar.main`, `footer`, `before.body.end`) but the blocks inside are Hyvä's (`header-content`, `cart-drawer`, `topmenu_generic`, `footer-content`).
-11. **H1 / H2** — The theme ships no checkout: `checkout_index_index` renders "No Checkout module installed" until Hyvä Checkout (`hyva-themes/magento2-hyva-checkout`, route `hyva_checkout`, its own component system), the Luma fallback (`hyva-themes/magento2-theme-fallback` + `magento2-luma-checkout`: routes such as `checkout/index` are rendered by `frontend/Magento/luma` with RequireJS — `magento:frontend-luma` rules apply on those pages), or a third-party checkout is installed. Never edit `Magento_Checkout/web/js` for a Hyvä store; the cart page is server-rendered PHP (`Magento_Checkout/templates/php-cart`).
+11. **H1 / H2** — The theme ships no checkout: `checkout_index_index` renders "No Checkout module installed" until Hyvä Checkout (`hyva-themes/magento2-hyva-checkout`, route `hyva_checkout`, its own component system), the Luma fallback (`hyva-themes/magento2-theme-fallback` + `magento2-luma-checkout`: routes such as `checkout/index` are rendered by `frontend/Magento/luma` with RequireJS — `magekwik-magento:frontend-luma` rules apply on those pages), or a third-party checkout is installed. Never edit `Magento_Checkout/web/js` for a Hyvä store; the cart page is server-rendered PHP (`Magento_Checkout/templates/php-cart`).
 12. **L1** — `x-show` toggles `display` and keeps the DOM (add `x-cloak`; Hyvä ships `[x-cloak] { display: none !important }`), `<template x-if>`/`<template x-for>` add and remove nodes. Layout `htmlClass` may hold Tailwind classes only on 2.4.7+ (`elements.xsd` allows `/ : . [ ] & @ ( )` there; 2.4.6 allows `:`; 2.4.4–2.4.5 letters, digits, `-`, `_`) — otherwise give the container a plain class and `@apply` in `web/tailwind/theme/page-layout.css`. After layout or template edits: `bin/magento cache:clean layout block_html full_page`.
 
 ## Minimal correct example
 
-A dismissible "free shipping" banner at the top of every page of `Acme/default`, hidden for the rest of the browser session once closed, with the threshold from the same ViewModel as `magento:frontend-luma`'s example.
+A dismissible "free shipping" banner at the top of every page of `Acme/default`, hidden for the rest of the browser session once closed, with the threshold from the same ViewModel as `magekwik-magento:frontend-luma`'s example.
 
 `app/design/frontend/Acme/default/Magento_Theme/layout/default.xml`:
 

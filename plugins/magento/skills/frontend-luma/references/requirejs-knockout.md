@@ -1,6 +1,6 @@
 # RequireJS, jQuery widgets, Knockout/UI components and customer-data
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (L3 and P3 apply throughout).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (L3 and P3 apply throughout).
 
 Luma's JavaScript is AMD modules loaded by RequireJS (`requirejs/require.js`, `baseUrl` = the theme's `pub/static/frontend/<Vendor>/<theme>/<locale>/`), jQuery + jQuery UI widgets for behaviour, Knockout for reactive components (`Magento_Ui`), and `Magento_Customer/js/customer-data` for anything that differs per visitor on a cached page. No script tags with global code: every piece of behaviour is a module and is started declaratively (L3).
 
@@ -260,7 +260,7 @@ class Notice implements SectionSourceInterface
 
 ```xml
 <?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Customer:etc/sections.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magekwik-magento:module:Magento_Customer:etc/sections.xsd">
     <action name="acme/notice/dismiss">
         <section name="acme-notice"/>
     </action>

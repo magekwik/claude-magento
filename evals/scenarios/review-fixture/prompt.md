@@ -1,4 +1,4 @@
 ---
 fixture: luma-skeleton
 ---
-/magento:review
+/magekwik-magento:review

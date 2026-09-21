@@ -1,6 +1,6 @@
 # PHPStan and PHPMD on Magento 2 code
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A9 factories and proxies, Q2 strict types, Q3 tests).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A9 factories and proxies, Q2 strict types, Q3 tests).
 
 Core ships PHPStan `^1.x` (`phpstan/phpstan ~1.2` on 2.4.4, `^1.6.8` on 2.4.5, `^1.9` from 2.4.6; 1.12.x resolves on 2.4.9) and runs it at **level 1** over changed files in its own static suite (`dev/tests/static/testsuite/Magento/Test/Php/LiveCodeTest.php::testPhpStan`, via `Magento\TestFramework\CodingStandard\Tool\PhpStan`: `--level 1 --no-progress --error-format=filtered --memory-limit=4G --configuration dev/tests/static/testsuite/Magento/Test/Php/_files/phpstan/phpstan.neon`). That config, the custom error formatter and the reflection extension live under `dev/tests/static/`, which `magento/magento2-base` deploys into every Composer project, so everything below works in a `magento/project-community-edition` checkout without cloning the framework repo.
 
@@ -55,7 +55,7 @@ Ignore patterns for generated classes when compiling is not an option (a CI job 
         - '#invalid type [A-Za-z0-9\\_]+\\Proxy#'
 ```
 
-Prefer generating over ignoring: `bin/magento setup:di:compile` (needs a working database and `app/etc/env.php`) fills `generated/code` with every factory, proxy and interceptor for every enabled module, after which nothing is unknown. Compiled code is disposable — `rm -rf generated/code generated/metadata` afterwards on a developer machine (`magento:ops`).
+Prefer generating over ignoring: `bin/magento setup:di:compile` (needs a working database and `app/etc/env.php`) fills `generated/code` with every factory, proxy and interceptor for every enabled module, after which nothing is unknown. Compiled code is disposable — `rm -rf generated/code generated/metadata` afterwards on a developer machine (`magekwik-magento:ops`).
 
 ## Levels
 

@@ -1,6 +1,6 @@
 # Module scaffold
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Example vendor is `Acme`; module `Acme_Catalog` lives at `app/code/Acme/Catalog`. Rules cited by ID are in `magento:conventions`.
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Example vendor is `Acme`; module `Acme_Catalog` lives at `app/code/Acme/Catalog`. Rules cited by ID are in `magekwik-magento:conventions`.
 
 ## Minimal module (three files)
 
@@ -76,7 +76,7 @@ Every directory is optional; create it when you need it. Names are PSR-4 segment
 | `ViewModel/` | Classes implementing `Magento\Framework\View\Element\Block\ArgumentInterface`, injected into blocks through layout `<argument name="view_model" xsi:type="object">` |
 | `Console/Command/` | `bin/magento` commands (see `cron-and-cli.md`) |
 | `Cron/` | Cron job classes (see `cron-and-cli.md`) |
-| `Setup/Patch/Data/`, `Setup/Patch/Schema/` | Data and schema patches (A6; see `magento:data`) |
+| `Setup/Patch/Data/`, `Setup/Patch/Schema/` | Data and schema patches (A6; see `magekwik-magento:data`) |
 | `etc/` | Global config: `module.xml`, `di.xml`, `events.xml`, `acl.xml`, `db_schema.xml`, `crontab.xml`, `webapi.xml`, `config.xml` |
 | `etc/frontend/`, `etc/adminhtml/`, `etc/webapi_rest/`, `etc/webapi_soap/`, `etc/graphql/`, `etc/crontab/` | Area-scoped `di.xml`, `events.xml`, `routes.xml`; `etc/adminhtml/menu.xml` and `system.xml` |
 | `view/frontend/`, `view/adminhtml/`, `view/base/` | `layout/`, `templates/`, `web/`, `ui_component/`, `requirejs-config.js` per area |
@@ -208,7 +208,7 @@ Admin controllers extend `Magento\Backend\App\Action` (which supplies `_isAllowe
 
 ```xml
 <?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magekwik-magento:module:Magento_Backend:etc/menu.xsd">
     <menu>
         <add id="Acme_Catalog::badges" title="Product Badges" translate="title" module="Acme_Catalog"
              parent="Magento_Catalog::inventory" sortOrder="50" action="acme_catalog/badge/index"
@@ -256,7 +256,7 @@ class Index extends Action implements HttpGetActionInterface
 
 A `Save` action follows the same pattern with `HttpPostActionInterface`, `ADMIN_RESOURCE = 'Acme_Catalog::badges_save'`, and `$this->resultRedirectFactory->create()->setPath('*/*/index')` (the redirect factory comes from `Context`). Admin POSTs are form-key checked by `Magento\Backend\App\Request\BackendValidator` (the adminhtml `CsrfRequestValidator`) before the action runs; there is nothing extra to add.
 
-The page needs a layout handle `view/adminhtml/layout/acme_catalog_badge_index.xml` (route id + controller + action) — see `magento:frontend-luma` for layout XML.
+The page needs a layout handle `view/adminhtml/layout/acme_catalog_badge_index.xml` (route id + controller + action) — see `magekwik-magento:frontend-luma` for layout XML.
 
 ## ViewModel
 

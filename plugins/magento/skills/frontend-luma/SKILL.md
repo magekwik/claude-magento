@@ -7,9 +7,9 @@ description: Magento 2 Luma/blank-based storefront work — theme structure, lay
 
 *Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).*
 
-*Not for Hyvä* — if the theme's parent chain reaches `Hyva/default` or `hyva-themes/*` is installed, use `magento:frontend-hyva`. Check `.claude/rules/magento.md`/`CLAUDE.md` facts from `/magento:init`, or `app/design/frontend/*/*/theme.xml`.
+*Not for Hyvä* — if the theme's parent chain reaches `Hyva/default` or `hyva-themes/*` is installed, use `magekwik-magento:frontend-hyva`. Check `.claude/rules/magento.md`/`CLAUDE.md` facts from `/magekwik-magento:init`, or `app/design/frontend/*/*/theme.xml`.
 
-Rules: see `magento:conventions` L1–L5, S3, P3. This skill cites them by ID and does not restate them.
+Rules: see `magekwik-magento:conventions` L1–L5, S3, P3. This skill cites them by ID and does not restate them.
 
 ## When to use
 
@@ -21,10 +21,10 @@ Rules: see `magento:conventions` L1–L5, S3, P3. This skill cites them by ID an
 
 ## When not to
 
-- The theme is Hyvä (Alpine.js/Tailwind, no RequireJS) → `magento:frontend-hyva`.
-- Backend behaviour the frontend calls (plugins, observers, `di.xml`, controllers, ACL) → `magento:module`.
-- Data the ViewModel needs from the database (repositories, collections, EAV attributes) → `magento:data`.
-- REST/GraphQL endpoints a JS component calls → `magento:api`.
+- The theme is Hyvä (Alpine.js/Tailwind, no RequireJS) → `magekwik-magento:frontend-hyva`.
+- Backend behaviour the frontend calls (plugins, observers, `di.xml`, controllers, ACL) → `magekwik-magento:module`.
+- Data the ViewModel needs from the database (repositories, collections, EAV attributes) → `magekwik-magento:data`.
+- REST/GraphQL endpoints a JS component calls → `magekwik-magento:api`.
 - Admin UI grids and forms (`ui_component` XML) — not covered here.
 
 ## Decision guide

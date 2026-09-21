@@ -1,11 +1,11 @@
 # Service contracts: data interfaces, repositories, models and extension attributes
 
-*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magento:conventions` (A4 contracts, A5 no raw SQL, A9 factories, P1/P2 paging, Q4 `@api`).
+*Target: Magento Open Source 2.4.4–2.4.9, PHP 8.1–8.5 (support varies by release).* Rules cited by ID are in `magekwik-magento:conventions` (A4 contracts, A5 no raw SQL, A9 factories, P1/P2 paging, Q4 `@api`).
 
 ## The layers
 
 - `Api/Data/` — data interfaces (`BrandInterface`) and search results interfaces; everyone may depend on them.
-- `Api/` — service interfaces (`BrandRepositoryInterface`, `*ManagementInterface`); everyone may depend on them, and this is what `webapi.xml` exposes (`magento:api`).
+- `Api/` — service interfaces (`BrandRepositoryInterface`, `*ManagementInterface`); everyone may depend on them, and this is what `webapi.xml` exposes (`magekwik-magento:api`).
 - `Model/`, `Model/ResourceModel/` — model, resource model, collection, repository implementation; only this module.
 
 Other modules type-hint the interfaces, `di.xml` binds them to your classes (A4). Everything below is the `acme_brand` table from `SKILL.md` (`entity_id`, `name`, `created_at`); `created_at` is filled by its column default and needs no setter.
@@ -347,7 +347,7 @@ An extension attribute adds a field to an entity you do not own — `ProductInte
 - `<join>` — `reference_table` is your table, `reference_field` its column matching the entity's `join_on_field`, and each `<field>` a column to select (`column="db_col"` when the property name differs). It applies **only** to `getList()`, and only when that repository calls `JoinProcessorInterface::process($collection)` — `ProductRepository`, `CustomerRepository` and `OrderRepository` do; your own repository must call it explicitly (inject `Magento\Framework\Api\ExtensionAttribute\JoinProcessorInterface`). A joined scalar takes the first `<field>`; an object type gets each field set through its setter. Array types cannot be joined.
 - `<resources><resource ref="Acme_Catalog::brands"/></resources>` restricts the attribute in web API responses to users with that ACL resource.
 
-Everything else needs plugins on the **repository interface** (`magento:module` for plugin mechanics):
+Everything else needs plugins on the **repository interface** (`magekwik-magento:module` for plugin mechanics):
 
 ```php
 <?php
