@@ -137,4 +137,4 @@ CI runs manifest validation, shellcheck, the unit tests, size limits and a conte
 
 ## Licence
 
-MIT © Magekwik. Issues and ideas: [github.com/magekwik/claude-magento/issues](https://github.com/magekwik/claude-magento/issues).
+MIT © 4KTechnologies Ltd, trading as Magekwik. Issues and ideas: [github.com/magekwik/claude-magento/issues](https://github.com/magekwik/claude-magento/issues).

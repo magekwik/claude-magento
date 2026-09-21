@@ -34,7 +34,9 @@ jobs:
           done
       - name: no Magekwik-specific content in the plugin
         run: |
-          ! grep -rniE 'magekwik|litemage\.magekwik|idea89' plugins/magento --exclude=README.md --exclude=plugin.json
+          # The plugin namespace (magekwik-magento:…, magekwik-magento@…) is allowed; anything else naming Magekwik or its stores is not.
+          ! grep -rniE 'magekwik|litemage\.magekwik|idea89' plugins/magento --exclude=README.md --exclude=plugin.json \
+            | grep -viE 'magekwik-magento[:@]'
 
   evals:
     if: github.event_name == 'workflow_dispatch'

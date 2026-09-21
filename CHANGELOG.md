@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Licence holder stated as 4KTechnologies Ltd (trading as Magekwik); no code changes.
+- CI content check allows the `magekwik-magento:` / `magekwik-magento@` namespace.
+
 ## 1.0.1 — 2026-09-21
 
 ### Changed

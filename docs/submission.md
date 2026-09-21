@@ -31,4 +31,4 @@ After acceptance: update `plugins/magento/README.md` and the repo README install
 
 | Date | Form | Reference / status |
 |---|---|---|
-| — | — | not yet submitted |
+| 2026-09-21 | Console (platform.claude.com/plugins/submit), org **4KTechnologies Ltd**, account support@magekwik.com | **Submitted and pending review.** Listed at https://platform.claude.com/plugins/submissions as "Magento Toolkit by Magekwik" — the form was filed just before the slug rename, so its recorded display name and description still say `/magento:init` / `/magento:review`; the repository (`plugins/magento`, v1.0.1, slug `magekwik-magento`) is what the review pipeline pulls. Console submissions cannot be edited after filing; do not file a second one (it would be a duplicate). If reviewers query the name, point them at `plugin.json`. |
