@@ -11,7 +11,7 @@ Makes Claude Code a competent Magento Open Source 2.4 developer: it knows the fr
 /plugin install magento@magekwik
 ```
 
-Once listed in the official directory: `/plugin install magento@claude-plugins-official`.
+Once accepted into the community marketplace: `/plugin marketplace add anthropics/claude-plugins-community` then `/plugin install magento@claude-community`.
 
 ## What you get
 

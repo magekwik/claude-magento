@@ -17,4 +17,4 @@
 5. Bump `plugins/magento/.claude-plugin/plugin.json` `version`; add the CHANGELOG entry; commit `chore: release vX.Y.Z`.
 6. `git tag vX.Y.Z && git push origin main --tags`; create the GitHub release from the tag with the CHANGELOG entry as body.
 7. In a Claude Code session: `/plugin marketplace update magekwik` then `/plugin install magento@magekwik` → the new version installs and `/magento:init` runs.
-8. Official directory (first release, then any release you want listed): submit at https://clau.de/plugin-directory-submission — see `docs/submission.md`.
+8. Community marketplace (first release): submit at https://platform.claude.com/plugins/submit — see `docs/submission.md`. Later releases are picked up automatically (the catalog pins the latest commit SHA).
