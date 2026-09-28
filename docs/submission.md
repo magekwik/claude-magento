@@ -31,4 +31,16 @@ After acceptance: update `plugins/magento/README.md` and the repo README install
 
 | Date | Form | Reference / status |
 |---|---|---|
-| 2026-09-21 | Console (platform.claude.com/plugins/submit), org **4KTechnologies Ltd**, account support@magekwik.com | **In review** (moved from "submitted and pending review" on 2026-09-22). Listed at https://platform.claude.com/plugins/submissions as "Magento Toolkit by Magekwik" — the form was filed just before the slug rename, so its recorded display name and description still say `/magento:init` / `/magento:review`; the repository (`plugins/magento`, v1.0.1, slug `magekwik-magento`) is what the review pipeline pulls. Console submissions cannot be edited after filing; do not file a second one (it would be a duplicate). If reviewers query the name, point them at `plugin.json`. |
+| 2026-09-21 | Console (platform.claude.com/plugins/submit), org **4KTechnologies Ltd**, account support@magekwik.com | Filed as "Magento Toolkit by Magekwik" minutes before the 1.0.1 slug rename, so its name and description still described `/magento:init` / `/magento:review`. Moved to "In review" on 2026-09-22 and stayed there. **Withdrawn 2026-09-28** to correct the name and command references — the Console gained a Withdraw control, which explicitly permits resubmitting the same repository. |
+| 2026-09-28 | Console, same org and account | **Submitted and pending review** as **"Magekwik Magento Toolkit"**, matching `plugin.json`. Repository `https://github.com/magekwik/claude-magento`, path `plugins/magento`, homepage = `docs/USER-GUIDE.md`, licence MIT, platform **Claude Code** only (Cowork not ticked — untested there), contact support@magekwik.com, privacy-policy URL left blank (the plugin collects nothing). Description and five use cases use `/magekwik-magento:init` and `/magekwik-magento:review`. |
+
+## Timing, and where the pipeline actually stands
+
+No SLA is published. Observed on 2026-09-28 from `anthropics/claude-plugins-community`:
+
+- **Submitted → In review** was about 7 hours for the first filing.
+- **In review → Passed review** takes days to weeks for others; two reported submissions sat in "pending" for 5 weeks and ~3 months.
+- **Passed review → listed in `marketplace.json`** is the real bottleneck. The catalog holds 2,282 plugins and has had **no plugin added since 2026-08-21**; the last commit of any kind was 2026-08-24. Nine open issues report the same stall (#1716, #2376, #2381, #2383, #2388, #2391, #2392, #2394, #2396) with **no reply from anyone at Anthropic** on any of them.
+- The submission form itself says: "During spin up there may be delays in release into the directory" and "Submitting this form does not guarantee inclusion."
+
+So: expect a review verdict in days-to-weeks, and treat the directory listing as unscheduled. The self-hosted marketplace (`/plugin marketplace add magekwik/claude-magento`) is the install route that works today and needs nothing from Anthropic.
