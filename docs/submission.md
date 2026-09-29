@@ -100,6 +100,19 @@ After acceptance: update `plugins/magento/README.md` and the repo README install
 | 2026-09-28 | Console, same org and account | **Rejected 2026-09-29** (see below). Filed as **"Magekwik Magento Toolkit"**, matching `plugin.json`. Repository `https://github.com/magekwik/claude-magento`, path `plugins/magento`, homepage = `docs/USER-GUIDE.md`, licence MIT, platform **Claude Code** only (Cowork not ticked — untested there), contact support@magekwik.com, privacy-policy URL left blank (the plugin collects nothing). Description and five use cases use `/magekwik-magento:init` and `/magekwik-magento:review`. The folder field went in as `.`, which is what sank it. |
 | 2026-09-29 | — | **Rejected.** Reviewer: "We could not find a plugin at the folder you submitted (.). There is no .claude-plugin/plugin.json there, so nothing was scanned. The plugin appears to be in 'plugins/magento'. Please resubmit with the folder that contains the plugin's manifest. If your repo is a marketplace with several plugins, submit each plugin folder separately." Cause is the form field alone — the root holds `marketplace.json`, not a plugin manifest. No repository change is needed: `claude plugin validate ./plugins/magento --strict` passes on v1.0.1. Refile with folder `plugins/magento`. |
 | 2026-09-29 | Console → **blocked**, then claude.ai | Refiled the whole form in the Console with path `plugins/magento`; *Submit for review* was refused — submissions have moved to claude.ai. Restarted at https://claude.ai/directory/manage (**Submit new → Plugin bundle**), signed in as the personal **Kishore · Max** account. Step 1 resolved `plugins/magento` from `marketplace.json` and **validation passed** (3 warnings, 7 policy holds — see above). **Not submitted.** First the connected GitHub account could not push to `magekwik/claude-magento`; that cleared after pushing `0be02df`. Draft saved server-side at `claude.ai/directory/manage` (Continue), with repository, folder and branch **locked** to `magekwik/claude-magento` · `plugins/magento` · `main`, so the folder mistake cannot recur on it. Left unsubmitted pending the account question above; a second Console attempt under 4KTech returned the 403 recorded at the top. Note: resuming the draft clears the Data handling answers. |
+| 2026-09-29 | claude.ai (`claude.ai/directory/manage`) | **SUBMITTED.** Filed from the personal claude.ai account `kishore.0510@gmail.com`, contact email **support@magekwik.com**. The listing shows the publisher as **"Plugin · by magekwik"**, read from the repository, so the personal account is not visible publicly. Pinned to **v1.0.1 · `e561dee`**, source `magekwik/claude-magento`, **Listed on: Claude Code** only. Status pipeline: Submitted ✓ → **Security scan (current)** → In review → Live. Submission page: `claude.ai/directory/manage/plugins/f956c608-7cbb-48f6-8f5e-f6472cf6aada`. |
+
+## After submitting: what the page shows
+
+The submission page (`claude.ai/directory/manage/plugins/<id>`) carries **Edit**, **Check for new
+commits** and **Withdraw submission**, tabs for Overview / Usage / Listing / Review / Versions /
+Settings, and a four-stage status: **Submitted → Security scan → In review → Live**.
+
+- **A webhook is connected to the repository.** New commits on the tracked branch (`main`) are picked
+  up and scanned automatically; the page reports "no push to the tracked branch yet" until one lands.
+- **Auto-publish does not apply**: "no version of this plugin goes live without an Anthropic
+  reviewer" — a consequence of the seven policy holds.
+- The first submitted version is recorded as **8 skills · 2 commands · 1 agent**.
 
 ## Timing, and where the pipeline actually stands
 
