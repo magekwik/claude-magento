@@ -42,6 +42,6 @@ Claude Code 2.1+ · `git` · `bash` · optional: `gh` (PR review), `vendor/bin/p
 
 ## Development
 
-Full user guide: `docs/USER-GUIDE.md` in the repository. See the repo README for tests and evals. Report issues at https://github.com/magekwik/claude-magento/issues.
+Full user guide: https://github.com/magekwik/claude-magento/blob/main/docs/USER-GUIDE.md. See the repo README for tests and evals. Report issues at https://github.com/magekwik/claude-magento/issues.
 
 MIT © 4KTechnologies Ltd, trading as Magekwik
