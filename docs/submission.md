@@ -4,11 +4,27 @@ Third-party plugins are submitted to Anthropic's **community marketplace** (`ant
 
 ## Where to submit
 
-**The Console route is closed.** As of 2026-09-29, pressing *Submit for review* at
-https://platform.claude.com/plugins/submit returns: "Plugin submissions have moved to claude.ai, so
-Console can no longer create or submit them. Submit your plugin from claude.ai instead, or contact
-the directory team if your organization cannot use claude.ai." The form still renders and accepts
-input; it just cannot file. Do not use it.
+**The Console route is closed.** Confirmed at the network level on 2026-09-29: with every field
+filled correctly under **support@magekwik.com / 4KTechnologies Ltd** (an **API plan** org), pressing
+*Submit for review* issues
+
+    POST /api/console/organizations/33afa8f9-3e9c-44ac-b7b8-babf73287827/directory/plugin-submissions
+    → 403
+
+and the UI shows: "Plugin submissions have moved to claude.ai, so Console can no longer create or
+submit them. Submit your plugin from claude.ai instead, or contact the directory team if your
+organization cannot use claude.ai." Re-filling the form does not help. Pressing *Submit for review* at
+https://platform.claude.com/plugins/submit therefore cannot file. The form still renders and accepts
+input; it just cannot submit. Do not use it.
+
+**Which account can submit.** The org lives only in the Console, and the Console cannot file. The
+claude.ai side of this machine is signed in as the personal account `kishore.0510@gmail.com` (Max),
+whose account menu offers no workspace switcher — an API-plan org does not come with a claude.ai
+workspace. So submitting as 4KTechnologies Ltd needs one of: a claude.ai login for
+support@magekwik.com, a Claude Team/Enterprise workspace for the company, or the directory team's
+help. Submitting from a personal account still lists the publisher as Magekwik (it is read from
+`plugin.json`), but the step-4 compliance attestation is then given on behalf of that personal
+organisation rather than the company.
 
 - **claude.ai** (the only working route): https://claude.ai/directory/manage → **Submit new** →
   **Plugin bundle**. Five steps: Source → Listing details → Data handling → Compliance → Review and
@@ -83,7 +99,7 @@ After acceptance: update `plugins/magento/README.md` and the repo README install
 | 2026-09-21 | Console (platform.claude.com/plugins/submit), org **4KTechnologies Ltd**, account support@magekwik.com | Filed as "Magento Toolkit by Magekwik" minutes before the 1.0.1 slug rename, so its name and description still described `/magento:init` / `/magento:review`. Moved to "In review" on 2026-09-22 and stayed there. **Withdrawn 2026-09-28** to correct the name and command references — the Console gained a Withdraw control, which explicitly permits resubmitting the same repository. |
 | 2026-09-28 | Console, same org and account | **Rejected 2026-09-29** (see below). Filed as **"Magekwik Magento Toolkit"**, matching `plugin.json`. Repository `https://github.com/magekwik/claude-magento`, path `plugins/magento`, homepage = `docs/USER-GUIDE.md`, licence MIT, platform **Claude Code** only (Cowork not ticked — untested there), contact support@magekwik.com, privacy-policy URL left blank (the plugin collects nothing). Description and five use cases use `/magekwik-magento:init` and `/magekwik-magento:review`. The folder field went in as `.`, which is what sank it. |
 | 2026-09-29 | — | **Rejected.** Reviewer: "We could not find a plugin at the folder you submitted (.). There is no .claude-plugin/plugin.json there, so nothing was scanned. The plugin appears to be in 'plugins/magento'. Please resubmit with the folder that contains the plugin's manifest. If your repo is a marketplace with several plugins, submit each plugin folder separately." Cause is the form field alone — the root holds `marketplace.json`, not a plugin manifest. No repository change is needed: `claude plugin validate ./plugins/magento --strict` passes on v1.0.1. Refile with folder `plugins/magento`. |
-| 2026-09-29 | Console → **blocked**, then claude.ai | Refiled the whole form in the Console with path `plugins/magento`; *Submit for review* was refused — submissions have moved to claude.ai. Restarted at https://claude.ai/directory/manage (**Submit new → Plugin bundle**), signed in as the personal **Kishore · Max** account. Step 1 resolved `plugins/magento` from `marketplace.json` and **validation passed** (3 warnings, 7 policy holds — see above). **Not submitted:** the connected GitHub account cannot push to `magekwik/claude-magento`. The draft is saved in that browser tab. |
+| 2026-09-29 | Console → **blocked**, then claude.ai | Refiled the whole form in the Console with path `plugins/magento`; *Submit for review* was refused — submissions have moved to claude.ai. Restarted at https://claude.ai/directory/manage (**Submit new → Plugin bundle**), signed in as the personal **Kishore · Max** account. Step 1 resolved `plugins/magento` from `marketplace.json` and **validation passed** (3 warnings, 7 policy holds — see above). **Not submitted.** First the connected GitHub account could not push to `magekwik/claude-magento`; that cleared after pushing `0be02df`. Draft saved server-side at `claude.ai/directory/manage` (Continue), with repository, folder and branch **locked** to `magekwik/claude-magento` · `plugins/magento` · `main`, so the folder mistake cannot recur on it. Left unsubmitted pending the account question above; a second Console attempt under 4KTech returned the 403 recorded at the top. Note: resuming the draft clears the Data handling answers. |
 
 ## Timing, and where the pipeline actually stands
 
