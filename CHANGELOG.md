@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- `/magekwik-magento:init` recognises Mage-OS projects. `detect-project.sh` refused a Mage-OS root whose `composer.json` has no `magento/*` require (a fresh `mage-os/project-community-edition` install) and reported every other one as edition `unknown`. It now reports edition `mage-os` with the Mage-OS release as `version` and the Magento release it tracks (`extra.magento_version`) as the new `magento.base` key; for Magento editions `base` equals `version`. Reported on LinkedIn.
+
 ### Changed
 - Licence holder stated as 4KTechnologies Ltd (trading as Magekwik); no code changes.
 - CI content check allows the `magekwik-magento:` / `magekwik-magento@` namespace.

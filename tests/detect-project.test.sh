@@ -65,6 +65,48 @@ mkdir -p "$tmp/commerce"; printf '{"require":{"magento/product-enterprise-editio
 printf '{"packages":[{"name":"magento/product-enterprise-edition","version":"2.4.7"}]}' > "$tmp/commerce/composer.lock"
 assert_eq "$(bash "$S" "$tmp/commerce" | python3 -c 'import json,sys;d=json.load(sys.stdin);print(d["magento"]["edition"],d["magento"]["version"])')" "commerce 2.4.7" "commerce edition"
 
+# 5b. Mage-OS: composer.json-only root (no "magento/" require), pretty-printed lock as Composer
+# writes it; version is the Mage-OS release, base is extra.magento_version
+mkdir -p "$tmp/mageos"; printf '{"require":{"mage-os/product-community-edition":"3.5.0"}}' > "$tmp/mageos/composer.json"
+cat > "$tmp/mageos/composer.lock" <<'JSON'
+{
+    "packages": [
+        {
+            "name": "mage-os/product-community-edition",
+            "version": "3.5.0",
+            "require": {
+                "mage-os/framework": "3.5.0"
+            },
+            "type": "metapackage",
+            "extra": {
+                "magento_version": "2.4.9"
+            },
+            "authors": [
+                {
+                    "name": "Mage-OS"
+                }
+            ]
+        },
+        {
+            "name": "mage-os/framework",
+            "version": "3.5.0",
+            "extra": {
+                "magento_version": "2.4.8"
+            }
+        }
+    ]
+}
+JSON
+bash "$S" "$tmp/mageos" > "$tmp/mageos.json"; rc=$?
+assert_eq "$rc" "0" "mage-os exit code"
+assert_eq "$(python3 -c 'import json,sys;d=json.load(open(sys.argv[1]))["magento"];print(d["edition"],d["version"],d["base"])' "$tmp/mageos.json")" "mage-os 3.5.0 2.4.9" "mage-os edition, version, base"
+# Mage-OS lock without extra.magento_version -> base null
+mkdir -p "$tmp/mageos-nobase"; cp "$tmp/mageos/composer.json" "$tmp/mageos-nobase/"
+printf '{"packages":[{"name":"mage-os/product-community-edition","version":"1.0.0"}]}' > "$tmp/mageos-nobase/composer.lock"
+assert_eq "$(bash "$S" "$tmp/mageos-nobase" | python3 -c 'import json,sys;d=json.load(sys.stdin)["magento"];print(d["edition"],d["base"])')" "mage-os None" "mage-os without magento_version -> null base"
+# Magento editions: base equals version
+assert_eq "$(bash "$S" "$tmp/commerce" | python3 -c 'import json,sys;print(json.load(sys.stdin)["magento"]["base"])')" "2.4.7" "commerce base = version"
+
 # 6. module registered with double-quoted name (no grep/tr crash under set -e pipefail)
 cp -R "$ROOT/evals/fixtures/luma-skeleton" "$tmp/dquote-module"
 mkdir -p "$tmp/dquote-module/app/code/Acme/Other"

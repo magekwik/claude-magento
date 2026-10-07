@@ -3,6 +3,8 @@
 # Usage: detect-project.sh [root]   Exit 2 if root is not a Magento project.
 # env: warden (.warden/ or .env with WARDEN_ENV_TYPE=) > ddev (.ddev/) > docker-magento
 #      (compose file + bin/clinotty, Mark Shust's wrapper) > docker (compose file) > native.
+# edition: commerce | open-source | mage-os (Mage-OS distribution; version is the Mage-OS release,
+#      magento.base the Magento release it tracks, from extra.magento_version) | unknown.
 # tooling.phpcs: vendor/bin/phpcs present (installed, config or not) OR a phpcs.xml*/
 #      phpcs.xml.dist config present.
 set -euo pipefail
@@ -11,7 +13,7 @@ root="${1:-.}"
 root="$(cd "$root" 2>/dev/null && pwd)" || { echo "not a Magento root: ${1:-.}" >&2; exit 2; }
 cd "$root"
 
-if [ ! -f bin/magento ] && ! grep -q '"magento/' composer.json 2>/dev/null; then
+if [ ! -f bin/magento ] && ! grep -qE '"(magento|mage-os)/' composer.json 2>/dev/null; then
   echo "not a Magento root: $root" >&2
   exit 2
 fi
@@ -21,14 +23,26 @@ json_str() { # escape a string for JSON
 }
 
 # --- edition / version from composer.lock ---
-edition="unknown"; version="null"
+edition="unknown"; version="null"; base="null"
 if [ -f composer.lock ]; then
   if grep -q '"name": *"magento/product-enterprise-edition"' composer.lock; then edition="commerce"; pkg="magento/product-enterprise-edition"
   elif grep -q '"name": *"magento/product-community-edition"' composer.lock; then edition="open-source"; pkg="magento/product-community-edition"
+  elif grep -q '"name": *"mage-os/product-community-edition"' composer.lock; then edition="mage-os"; pkg="mage-os/product-community-edition"
   fi
   if [ "$edition" != "unknown" ]; then
     v=$(grep -A3 "\"name\": *\"$pkg\"" composer.lock | sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' | head -1 || true)
     [ -n "$v" ] && version="\"$(json_str "$v")\""
+    if [ "$edition" = "mage-os" ]; then
+      # magento_version inside this package's object: scan from its name line to the next package name
+      b=$(awk -v pkg="$pkg" '
+        index($0, "\"name\"") && $0 ~ "\"" pkg "\"" { on=1; next }
+        on && $0 ~ /"name": *"[^"\/]+\/[^"]+"/ { exit }
+        on && match($0, /"magento_version": *"[^"]*"/) { s=substr($0, RSTART, RLENGTH); sub(/.*: *"/, "", s); sub(/"$/, "", s); print s; exit }
+      ' composer.lock || true)
+      [ -n "$b" ] && base="\"$(json_str "$b")\""
+    else
+      base="$version"
+    fi
   fi
 fi
 
@@ -94,5 +108,5 @@ if [ -r app/etc/env.php ]; then
   [ -n "$m" ] && mode="\"$m\""
 fi
 
-printf '{"root":"%s","magento":{"edition":"%s","version":%s},"php":%s,"modules":[%s],"themes":[%s],"hyva":%s,"env":"%s","tooling":{"phpcs":%s,"phpstan":%s,"phpunit":%s},"mode":%s}\n' \
-  "$(json_str "$root")" "$edition" "$version" "$php" "$modules" "$themes" "$hyva" "$env" "$phpcs" "$phpstan" "$phpunit" "$mode"
+printf '{"root":"%s","magento":{"edition":"%s","version":%s,"base":%s},"php":%s,"modules":[%s],"themes":[%s],"hyva":%s,"env":"%s","tooling":{"phpcs":%s,"phpstan":%s,"phpunit":%s},"mode":%s}\n' \
+  "$(json_str "$root")" "$edition" "$version" "$base" "$php" "$modules" "$themes" "$hyva" "$env" "$phpcs" "$phpstan" "$phpunit" "$mode"
