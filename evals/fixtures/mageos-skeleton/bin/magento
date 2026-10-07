@@ -1,0 +1,4 @@
+#!/usr/bin/env php
+<?php
+// fixture stub; real installs replace this file
+echo "Magento CLI (fixture stub)\n";

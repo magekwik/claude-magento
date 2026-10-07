@@ -107,6 +107,9 @@ assert_eq "$(bash "$S" "$tmp/mageos-nobase" | python3 -c 'import json,sys;d=json
 # Magento editions: base equals version
 assert_eq "$(bash "$S" "$tmp/commerce" | python3 -c 'import json,sys;print(json.load(sys.stdin)["magento"]["base"])')" "2.4.7" "commerce base = version"
 
+# 5c. Mage-OS fixture (lock trimmed from a real mage-os/project-community-edition 3.5.0 resolve)
+assert_eq "$(bash "$S" "$ROOT/evals/fixtures/mageos-skeleton" | python3 -c 'import json,sys;d=json.load(sys.stdin)["magento"];print(d["edition"],d["version"],d["base"])')" "mage-os 3.5.0 2.4.9" "mage-os fixture"
+
 # 6. module registered with double-quoted name (no grep/tr crash under set -e pipefail)
 cp -R "$ROOT/evals/fixtures/luma-skeleton" "$tmp/dquote-module"
 mkdir -p "$tmp/dquote-module/app/code/Acme/Other"

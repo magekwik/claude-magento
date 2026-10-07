@@ -1,0 +1,25 @@
+{
+    "packages": [
+        {
+            "name": "mage-os/framework",
+            "version": "3.5.0",
+            "require": {
+                "colinmollenhour/php-redis-session-abstract": "^2.0",
+                "composer/composer": "^2.2"
+            },
+            "type": "magento2-library"
+        },
+        {
+            "name": "mage-os/product-community-edition",
+            "version": "3.5.0",
+            "require": {
+                "aligent/magento2-pci-4-compatibility": "1.4.2",
+                "colinmollenhour/cache-backend-file": "^1.4"
+            },
+            "type": "metapackage",
+            "extra": {
+                "magento_version": "2.4.9"
+            }
+        }
+    ]
+}

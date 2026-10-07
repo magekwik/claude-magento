@@ -1,0 +1,1 @@
+{ "name": "acme/store", "require": { "mage-os/product-community-edition": "3.5.0" } }

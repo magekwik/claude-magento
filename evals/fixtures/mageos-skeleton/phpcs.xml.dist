@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<ruleset name="Acme"><rule ref="Magento2"/><file>app/code</file></ruleset>
