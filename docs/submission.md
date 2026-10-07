@@ -90,7 +90,7 @@ Two warnings:
 - **Contains a download-and-run command** (2 findings) — `curl -sI https://store.example/ | grep -i
   x-magento` in `skills/ops/references/caching.md`, a verification one-liner in documentation.
 
-After acceptance: update `plugins/magento/README.md` and the repo README install sections to mention `magekwik-magento@claude-community`.
+After acceptance: update `plugins/magento/README.md` and the repo README install sections to mention `magekwik-magento@claude-community` — **once the plugin actually shows up in `/plugin` → Discover** (not yet as of 2026-10-01).
 
 ## Submissions
 
@@ -101,6 +101,7 @@ After acceptance: update `plugins/magento/README.md` and the repo README install
 | 2026-09-29 | — | **Rejected.** Reviewer: "We could not find a plugin at the folder you submitted (.). There is no .claude-plugin/plugin.json there, so nothing was scanned. The plugin appears to be in 'plugins/magento'. Please resubmit with the folder that contains the plugin's manifest. If your repo is a marketplace with several plugins, submit each plugin folder separately." Cause is the form field alone — the root holds `marketplace.json`, not a plugin manifest. No repository change is needed: `claude plugin validate ./plugins/magento --strict` passes on v1.0.1. Refile with folder `plugins/magento`. |
 | 2026-09-29 | Console → **blocked**, then claude.ai | Refiled the whole form in the Console with path `plugins/magento`; *Submit for review* was refused — submissions have moved to claude.ai. Restarted at https://claude.ai/directory/manage (**Submit new → Plugin bundle**), signed in as the personal **Kishore · Max** account. Step 1 resolved `plugins/magento` from `marketplace.json` and **validation passed** (3 warnings, 7 policy holds — see above). **Not submitted.** First the connected GitHub account could not push to `magekwik/claude-magento`; that cleared after pushing `0be02df`. Draft saved server-side at `claude.ai/directory/manage` (Continue), with repository, folder and branch **locked** to `magekwik/claude-magento` · `plugins/magento` · `main`, so the folder mistake cannot recur on it. Left unsubmitted pending the account question above; a second Console attempt under 4KTech returned the 403 recorded at the top. Note: resuming the draft clears the Data handling answers. |
 | 2026-09-29 | claude.ai (`claude.ai/directory/manage`) | **SUBMITTED.** Filed from the personal claude.ai account `kishore.0510@gmail.com`, contact email **support@magekwik.com**. The listing shows the publisher as **"Plugin · by magekwik"**, read from the repository, so the personal account is not visible publicly. Pinned to **v1.0.1 · `e561dee`**, source `magekwik/claude-magento`, **Listed on: Claude Code** only. Status pipeline: Submitted ✓ → **Security scan (current)** → In review → Live. Submission page: `claude.ai/directory/manage/plugins/f956c608-7cbb-48f6-8f5e-f6472cf6aada`. |
+| 2026-10-01 | claude.ai | **PUBLISHED — live in the directory.** Version passed its scan on 2026-09-29 ("ready to publish"); **approved by the directory team** and **published v1.0.1 · `2d257ff`** in the early hours of 2026-10-01 (the docs commit `2d257ff` had re-pinned the review from `e561dee`). Listed on Claude Code. The dashboard now shows **Auto-publish: On**. Same day the plugin did **not** yet appear under `/plugin` → Discover, so the self-hosted marketplace commands remain the documented install route. Announced on the MageKwik LinkedIn page: https://lnkd.in/p/eh3RiT7W |
 
 ## After submitting: what the page shows
 
@@ -110,8 +111,10 @@ Settings, and a four-stage status: **Submitted → Security scan → In review �
 
 - **A webhook is connected to the repository.** New commits on the tracked branch (`main`) are picked
   up and scanned automatically; the page reports "no push to the tracked branch yet" until one lands.
-- **Auto-publish does not apply**: "no version of this plugin goes live without an Anthropic
-  reviewer" — a consequence of the seven policy holds.
+- **Auto-publish:** before approval the page said "no version of this plugin goes live without an
+  Anthropic reviewer". After approval (2026-10-01) it reads **On: versions that pass go live
+  automatically**, so every passing push to `main` now ships to directory users — merge release-ready
+  work only.
 - The first submitted version is recorded as **8 skills · 2 commands · 1 agent**.
 
 ## Timing, and where the pipeline actually stands
