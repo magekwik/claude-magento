@@ -132,7 +132,8 @@ CI runs manifest validation, shellcheck, the unit tests, size limits and a conte
 
 ## Roadmap
 
-- **1.1 — audit suite:** `/magekwik-magento:audit` with performance, SEO, patch-detector and cron-inspector agents working from code and config.
+- **1.1 — local setup:** `/magekwik-magento:local-setup`, a guided, resumable local environment on Warden, DDEV, docker-magento or Valet.
+- **1.2 — audit suite:** `/magekwik-magento:audit` with performance, SEO, patch-detector and cron-inspector agents working from code and config.
 - **2.0 — store operations:** an MCP server for live store data (cron, indexers, performance, reporting).
 
 ## Licence

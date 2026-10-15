@@ -207,7 +207,7 @@ Today, indirectly but concretely:
 - **Less dependence on one person's memory.** `init` documents the project — modules, theme, environment, conventions — in the repository itself.
 - **Plain answers to operational questions.** "Why is `setup:upgrade` slow?", "what does this patch release change?", "which caches do I clear after a config change?" — answered for *your* environment.
 
-What it does not do yet: audit a live store's performance or SEO, inspect cron history, or detect applied patches. Those are the next two releases (below). Until then, treat it as a developer tool whose results you benefit from, not a merchant dashboard.
+What it does not do yet: audit a live store's performance or SEO, inspect cron history, or detect applied patches. Those are on the roadmap (below). Until then, treat it as a developer tool whose results you benefit from, not a merchant dashboard.
 
 ---
 
@@ -237,7 +237,8 @@ What it does not do yet: audit a live store's performance or SEO, inspect cron h
 ## 11. Roadmap
 
 - **1.0** (this release): the eight skills, `/magekwik-magento:init`, `/magekwik-magento:review`, the reviewer agent, evals and CI.
-- **1.1 — audit suite:** `/magekwik-magento:audit` with performance, SEO, patch-detector and cron-inspector agents producing one report format, working from code and config (no live store access).
+- **1.1 — local setup:** `/magekwik-magento:local-setup`, a guided, resumable local environment on Warden, DDEV, docker-magento or Valet, for a new Magento Open Source / Mage-OS install or an existing repository.
+- **1.2 — audit suite:** `/magekwik-magento:audit` with performance, SEO, patch-detector and cron-inspector agents producing one report format, working from code and config (no live store access).
 - **2.0 — store operations:** an MCP server for live data — cron schedule, indexers, real performance and reporting — so merchants can ask about the running store, not just the code.
 
 ---
