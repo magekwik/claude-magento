@@ -2,13 +2,14 @@
 
 Working plan for the `feat/local-setup` branch — delete this file once every step below is done. Do not merge to `main` until fully tested: auto-publish is on, so every passing push to `main` ships.
 
-The four new files are already in place under `plugins/magento/` (nothing overwritten):
+The five new files are already in place under `plugins/magento/` (nothing overwritten):
 
 ```
 plugins/magento/commands/local-setup.md            the step-wise, resumable command prompt
 plugins/magento/agents/local-setup-verifier.md     read-only health-check agent (step 9)
 plugins/magento/scripts/local-setup-detect.sh      host/OS/tool/port/dir detection → JSON
 plugins/magento/scripts/local-setup-env.sh         .magento-local.env ledger + credentials manager
+plugins/magento/scripts/local-setup-docker-magento.sh  docker-magento template copy (replaces upstream's curl | bash)
 ```
 
 Then apply the three edits below, run the checks, and release as 1.1.0.
@@ -55,7 +56,7 @@ Also extend the "What it touches" list:
 ### Added
 - `/magekwik-magento:local-setup`: guided, resumable local environment setup for Warden, DDEV, docker-magento and Valet on macOS/Linux/WSL2/Windows; new Magento Open Source / Mage-OS install or existing git repo; all choices and credentials in a git-ignored `.magento-local.env`.
 - `local-setup-verifier` agent: read-only post-setup health check.
-- `scripts/local-setup-detect.sh`, `scripts/local-setup-env.sh`.
+- `scripts/local-setup-detect.sh`, `scripts/local-setup-env.sh`, `scripts/local-setup-docker-magento.sh`.
 ```
 
 ## 4. Checks before merging

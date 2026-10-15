@@ -14,13 +14,14 @@ You are setting up a **local** Magento 2 development environment for the user, o
 - **No live systems.** Never ask for, connect to, or read credentials of any staging/production database, host, API or admin. Every credential is generated locally into `.magento-local.env`. If the user wants real data, the only path is a sanitised dump they place at `.magento-local/db.sql` or `.sql.gz` themselves (step 7).
 - **Ask with the AskUserQuestion tool** when it is available; otherwise ask in plain text and stop until answered. Ask only what the ledger does not already answer. Arguments (`$ARGUMENTS`) pre-answer questions: `--dir`, `--env`, `--repo`, `--new`.
 - **Prefix every Magento/Composer command for the chosen environment** (`$MAGE` below). The table and per-tool details are in `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` — read it once at step 5. In non-TTY runs add `-T` for Warden and Compose.
-- **Write nothing outside the target directory** except the tool's own global config (`~/.warden`, `~/.ddev`, Valet's config) which the tools write themselves.
+- **Write nothing outside the target directory** except the tool's own global config (`~/.warden`, `~/.ddev`, Valet's config) which the tools write themselves, and the empty `~/.composer` and `~/.ssh` directories docker-magento mounts.
 - Keep output short: one line per action, no narration of what you are about to do.
 
 Helper scripts (always via `bash "${CLAUDE_PLUGIN_ROOT}/scripts/…"`):
 
 - `local-setup-detect.sh [dir]` → JSON: `os`, `tools{}`, `dir{}`, `ports{}`, `recommend`. Call it DETECT.
 - `local-setup-env.sh init|get|set|step|next|status|show|ignore <dir> …` → the ledger. Call its file LEDGER.
+- `local-setup-docker-magento.sh <dir>` → copies the docker-magento Compose template into DIR (step 5).
 
 ## 0. Resolve state
 
@@ -95,7 +96,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` now. Work in DIR.
 3. `ddev start`. First start may ask for `sudo` to edit `/etc/hosts` or trust mkcert → **blocked** if it cannot complete non-interactively.
 
 **docker-magento**
-1. If `compose.yaml` + `bin/clinotty` are absent: `curl -s https://raw.githubusercontent.com/markshust/docker-magento/master/lib/template | bash` in DIR (this fetches the template only — no install yet). Code lives in `src/`; write `SETUP_CODE_DIR=src` to LEDGER (other tools: `.`).
+1. If `compose.yaml` + `bin/clinotty` are absent: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-docker-magento.sh" DIR` — copies the template only (no install yet), never overwrites a file, merges `.gitignore`, and leaves DIR's `.git` alone. Never run upstream's `lib/template | bash` instead: it deletes DIR's `.git`, which drops the ledger's ignore rules. Exit 1 on an existing `bin/` → **blocked**: tell the user `bin/` is in the way. Record its last line's `<repo>@<sha>` as `SETUP_DM_TEMPLATE` in LEDGER. Code lives in `src/`; write `SETUP_CODE_DIR=src` to LEDGER (other tools: `.`).
 2. Reconcile `env/db.env` to LEDGER (`MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`) and `env/magento.env` (`MAGENTO_ADMIN_*`, `MAGENTO_URL` = `DOMAIN`, hosts `db`/`opensearch`/`redis`) — the wrappers read these, so the two files must agree with LEDGER. Pin `compose.yaml` PHP image to `PHP_VERSION` if a matching tag exists (`markoshust/magento-php:<ver>-fpm-…`).
 3. `bin/start` (pulls images; several minutes).
 
