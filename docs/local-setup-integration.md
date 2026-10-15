@@ -67,7 +67,7 @@ bash tests/run.sh                                            # add the three cas
 claude --plugin-dir ./plugins/magento                        # then: /magekwik-magento:local-setup --dir /tmp/ls-test --new --env ddev
 ```
 
-Suggested `tests/` cases (same style as the existing script tests):
+Done: these three cases, plus regressions for macOS bash 3.2, running from another repo and git worktrees, are in `tests/local-setup-env.test.sh` (each runs under both `bash` and `/bin/bash`):
 
 1. `local-setup-detect.sh` on an empty dir → valid JSON, `dir.empty=true`, `recommend` ∈ {warden,ddev}.
 2. `local-setup-env.sh init` then `next` → `1`; `step 1 done`, `step 2 blocked x`, `next` → `2`; `.git/info/exclude` contains the file; `git check-ignore` passes.
