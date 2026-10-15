@@ -71,7 +71,7 @@ Check DETECT.tools against the chosen tool. Everything missing is a **blocked** 
 
 | `SETUP_ENV` | Needs |
 |---|---|
-| warden | Docker (running), `warden` — macOS: `brew install wardenenv/warden/warden`; Linux/WSL2: `curl -fsSL https://raw.githubusercontent.com/wardenenv/warden/main/install.sh \| bash` then `warden svc up`. First run of `warden svc up` installs the CA → `sudo`. |
+| warden | Docker (running), `warden` — follow https://docs.warden.dev/installing.html. macOS and Linux with Homebrew: `brew install wardenenv/warden/warden`; Linux without Homebrew: the page's *Alternative Installation* (a `git clone` into `/opt/warden`, needs `sudo`); WSL2: its *Windows Installation (via WSL2)* section, including the Windows hosts/DNS step. Then `warden svc up` — its first run installs the CA → `sudo`. |
 | ddev | Docker (running: Docker Desktop, OrbStack, Colima or Docker CE), `ddev` — macOS: `brew install ddev/ddev/ddev`; Linux/WSL2: the installer from docs.ddev.com; Windows: the `.exe` installer with the WSL2 backend. `mkcert -install` once (DDEV prompts). |
 | docker-magento | Docker (running), `docker compose` v2, `curl`, `git`. |
 | valet (macOS) | Homebrew, `php@<PHP_VERSION>`, `composer`, `mysql` (or `mariadb`) started (`brew services start mysql`), `opensearch` started (`brew services start opensearch`), `valet` (`composer global require laravel/valet && valet install`), optionally `redis`. |
