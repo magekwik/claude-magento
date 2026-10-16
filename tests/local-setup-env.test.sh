@@ -56,6 +56,8 @@ for sh in $shells; do
   assert_contains "$t/b/.gitignore" "^\.magento-local\.env$" "$sh B2 .gitignore created outside a repo"
   assert_contains "$t/b/.gitignore" "^/auth\.json$" "$sh B2 auth.json ignored"
   assert_contains "$t/b/.gitignore" "^/app/etc/env\.php$" "$sh B2 env.php ignored"
+  assert_contains "$t/b/.gitignore" "^/\.env$" "$sh B2 Warden .env ignored"
+  assert_contains "$t/a/.git/info/exclude" "^/\.env$" "$sh B2 Warden .env in repo exclude"
   $sh "$S" ignore "$t/b" > /dev/null
   assert_eq "$(grep -c 'local setup ledger' "$t/b/.gitignore")" "1" "$sh B2 ignore is idempotent"
   assert_contains "$t/a/.git/info/exclude" "^/app/etc/env\.php$" "$sh B2 env.php in repo exclude"
