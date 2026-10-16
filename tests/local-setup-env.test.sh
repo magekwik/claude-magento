@@ -32,6 +32,8 @@ for sh in $shells; do
   git -C "$t/a" check-ignore -q .magento-local.env; assert_eq "$?" "0" "$sh A check-ignore"
   assert_eq "$([ -e "$t/a/.gitignore" ] && echo yes || echo no)" "no" "$sh A repo without .gitignore gets none (exclude is enough)"
   assert_contains "$t/a/.magento-local.env" "^SETUP_CODE_DIR=\.$" "$sh A SETUP_CODE_DIR default"
+  assert_contains "$t/a/.magento-local.env" "^HTTP_PORT=80$" "$sh A HTTP_PORT default"
+  assert_contains "$t/a/.magento-local.env" "^HTTPS_PORT=443$" "$sh A HTTPS_PORT default"
 
   # A2. run from inside another repo: the ignore rules land in the target, never in the caller
   mkdir "$t/caller" "$t/a2" && git -C "$t/caller" init -q && git -C "$t/a2" init -q

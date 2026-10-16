@@ -22,6 +22,8 @@ Helper scripts (always via `bash "${CLAUDE_PLUGIN_ROOT}/scripts/…"`):
 - `local-setup-detect.sh [dir]` → JSON: `os`, `tools{}`, `dir{}`, `ports{}`, `recommend`. Call it DETECT.
 - `local-setup-env.sh init|get|set|step|next|status|show|ignore <dir> …` → the ledger. Call its file LEDGER.
 - `local-setup-docker-magento.sh <dir>` → copies the docker-magento Compose template into DIR (step 5).
+- `local-setup-ports.sh pick <port>…` → a free host port for each wanted one (step 3).
+- `local-setup-media.sh <dir> --check|--stream|--into <path>` → validates and delivers the media archive (step 7).
 
 ## 0. Resolve state
 
@@ -67,7 +69,10 @@ Choose `SETUP_ENV` ∈ `warden | ddev | docker-magento | valet`. Pre-answered by
 | **docker-magento** (Mark Shust) | a standalone Compose stack with `bin/*` wrappers, no global daemon | macOS, Linux, WSL2 |
 | **Valet** | no Docker, fastest page loads, services on the host | macOS (Laravel Valet) and Linux (valet-linux). **Not Windows** |
 
-Hard rules: `valet` on `windows`/`wsl2` → refuse, offer DDEV. Any Docker tool on `windows` (non-WSL shell) → tell the user Claude Code must run **inside WSL2** for Warden/docker-magento; DDEV works from either. Ports: if `DETECT.ports.80` or `443` is `busy`, warn that Warden's Traefik / DDEV's router / docker-magento's nginx needs them and name the likely occupant (`lsof -nP -iTCP:80 -sTCP:LISTEN` / `sudo ss -ltnp`). Set `SETUP_ENV`; set hostnames in LEDGER to match the tool (`DB_HOST`, `SEARCH_HOST`, `REDIS_HOST`): Warden/docker-magento/valet below; DDEV → `DB_HOST=db DB_NAME=db DB_USER=db DB_PASSWORD=db` (DDEV's fixed database credentials) and `SEARCH_HOST=opensearch`; Valet → `DB_HOST=127.0.0.1 SEARCH_HOST=127.0.0.1 REDIS_HOST=127.0.0.1`. Mark step 3 `done`.
+Hard rules: `valet` on `windows`/`wsl2` → refuse, offer DDEV. Any Docker tool on `windows` (non-WSL shell) → tell the user Claude Code must run **inside WSL2** for Warden/docker-magento; DDEV works from either. Ports — never stop or reconfigure whatever already holds a port (another tool's router, a MailHog, a local database serve the user's other projects):
+- **DDEV / docker-magento:** run `bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-ports.sh" pick <ports>` with every host port the tool publishes — DDEV `80 443 8025 8026` (router HTTP/HTTPS, Mailpit HTTP/HTTPS); docker-magento `80 443 3306 6379 9200 9300 5672 15672 1080 8080` (app HTTP/HTTPS, db, redis, opensearch ×2, rabbitmq ×2, mailcatcher, phpmyadmin). It prints `wanted=chosen` per port; a busy port moves to a free one. Record `HTTP_PORT`/`HTTPS_PORT` (the choices for 80/443) in LEDGER, and when `HTTPS_PORT` is not 443 include it in the URL: `BASE_URL=https://<DOMAIN>:<HTTPS_PORT>/`. Tell the user in one line which ports moved and why; step 5 applies them.
+- **Warden:** 80/443 held by Warden's own `traefik` container is normal (shared by all Warden projects). Held by anything else → warn and name the occupant (`lsof -nP -iTCP:80 -sTCP:LISTEN` / `sudo ss -ltnp`); Warden's router ports are global, so do not change them.
+- **Valet:** its nginx needs 80/443 on the host; if busy, warn and name the occupant. Set `SETUP_ENV`; set hostnames in LEDGER to match the tool (`DB_HOST`, `SEARCH_HOST`, `REDIS_HOST`): Warden/docker-magento/valet below; DDEV → `DB_HOST=db DB_NAME=db DB_USER=db DB_PASSWORD=db` (DDEV's fixed database credentials) and `SEARCH_HOST=opensearch`; Valet → `DB_HOST=127.0.0.1 SEARCH_HOST=127.0.0.1 REDIS_HOST=127.0.0.1`. Mark step 3 `done`.
 
 ## 4. Prerequisites
 
@@ -97,12 +102,14 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` now. Work in DIR.
 **ddev**
 1. `ddev config --project-name=<PROJECT_NAME> --project-type=magento2 --docroot=pub --upload-dirs=media --disable-settings-management --php-version=<PHP_VERSION> --database=<mariadb|mysql>:<DB_DISTRIBUTION_VERSION>` (skip when `.ddev/config.yaml` exists; then only reconcile `PHP_VERSION` from it into LEDGER). Set `DOMAIN=<PROJECT_NAME>.ddev.site`, `BASE_URL=https://<DOMAIN>/` in LEDGER.
 2. `ddev add-on get ddev/ddev-opensearch` (or `ddev-elasticsearch` if `SEARCH_ENGINE=elasticsearch`).
-3. `ddev start`. First start may ask for `sudo` to edit `/etc/hosts` or trust mkcert → **blocked** if it cannot complete non-interactively.
+3. If step 3 moved any port, write only the moved ones to `.ddev/config.local.yaml` (DDEV git-ignores it; it never touches DDEV's global config or other projects): `router_http_port`, `router_https_port`, `mailpit_http_port`, `mailpit_https_port`, as quoted strings, e.g. `router_https_port: "8443"`.
+4. `ddev start`. First start may ask for `sudo` to edit `/etc/hosts` or trust mkcert → **blocked** if it cannot complete non-interactively.
 
 **docker-magento**
 1. If `compose.yaml` + `bin/clinotty` are absent: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-docker-magento.sh" DIR` — copies the template only (no install yet), never overwrites a file, merges `.gitignore`, and leaves DIR's `.git` alone. Never run upstream's `lib/template | bash` instead: it deletes DIR's `.git`, which drops the ledger's ignore rules. Exit 1 on an existing `bin/` → **blocked**: tell the user `bin/` is in the way. Record its last line's `<repo>@<sha>` as `SETUP_DM_TEMPLATE` in LEDGER. Code lives in `src/`; write `SETUP_CODE_DIR=src` to LEDGER (other tools: `.`).
 2. Reconcile `env/db.env` to LEDGER (`MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`) and `env/magento.env` (`MAGENTO_ADMIN_*`, `MAGENTO_URL` = `DOMAIN`, hosts `db`/`opensearch`/`redis`) — the wrappers read these, so the two files must agree with LEDGER. Pin `compose.yaml` PHP image to `PHP_VERSION` if a matching tag exists (`markoshust/magento-php:<ver>-fpm-…`).
-3. `bin/start` (pulls images; several minutes).
+3. If step 3 moved any port, write `compose.override.yaml` (the `bin/docker-compose` wrapper loads it last) replacing the ports of only the affected services with `!override` — a plain override would add to the list, not replace it, and the old port would still clash. Container ports stay as upstream: `app` `"<HTTP>:8000"`, `"<HTTPS>:8443"`; `db` `"<p>:3306"`; `redis` `"<p>:6379"`; `opensearch` `"<p>:9200"`, `"<p>:9300"`; `rabbitmq` `"<p>:15672"`, `"<p>:5672"`; `mailcatcher` `"<p>:1080"`; `phpmyadmin` `"<p>:80"`. Example: `services:\n  app:\n    ports: !override\n      - "8081:8000"\n      - "8443:8443"`. `!override` needs Docker Compose ≥ 2.24 (`docker compose version`); older → **blocked**: ask the user to update Docker. Add `/compose.override.yaml` to DIR's `.git/info/exclude` (or `.gitignore` outside a repo) — it is machine-specific.
+4. `bin/start` (pulls images; several minutes).
 
 **valet**
 1. `valet park` is not used; use `valet link <PROJECT_NAME>` from the code directory **after** step 6 — record `SETUP_VALET_LINK=pending`. Here: ensure services run (`brew services list` / `systemctl status`), create the database as root using `DB_ROOT_PASSWORD` only if the local MySQL has no root password yet (`mysql -uroot -e "CREATE DATABASE IF NOT EXISTS \`<DB_NAME>\`; CREATE USER IF NOT EXISTS '<DB_USER>'@'localhost' IDENTIFIED BY '<DB_PASSWORD>'; GRANT ALL ON \`<DB_NAME>\`.* TO '<DB_USER>'@'localhost';"`). If `mysql -uroot` needs a password you do not have → **blocked**: give the exact `CREATE …` statements and resume. Set `DOMAIN=<PROJECT_NAME>.test` (Valet's default TLD; read `valet tld` if changed).

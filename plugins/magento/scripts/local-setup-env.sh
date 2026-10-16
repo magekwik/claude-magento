@@ -82,6 +82,8 @@ SETUP_CODE_DIR .
 PROJECT_NAME magento
 DOMAIN
 BASE_URL
+HTTP_PORT 80
+HTTPS_PORT 443
 ADMIN_URI admin
 ADMIN_USER admin
 ADMIN_PASSWORD $(admin_pw)
@@ -124,7 +126,7 @@ EOF
       echo "# Every credential here is local-only and randomly generated — nothing was read from any live system."
       echo
       echo "## Target"
-      for k in SETUP_VERSION SETUP_ENV SETUP_OS SETUP_DIR SETUP_SOURCE SETUP_GIT_URL SETUP_GIT_BRANCH SETUP_DISTRO SETUP_MAGENTO_VERSION SETUP_CODE_DIR PROJECT_NAME DOMAIN BASE_URL; do echo "$k=$(dget "$k")"; done
+      for k in SETUP_VERSION SETUP_ENV SETUP_OS SETUP_DIR SETUP_SOURCE SETUP_GIT_URL SETUP_GIT_BRANCH SETUP_DISTRO SETUP_MAGENTO_VERSION SETUP_CODE_DIR PROJECT_NAME DOMAIN BASE_URL HTTP_PORT HTTPS_PORT; do echo "$k=$(dget "$k")"; done
       echo
       echo "## Admin (use these to log in)"
       for k in ADMIN_URI ADMIN_USER ADMIN_PASSWORD ADMIN_EMAIL ADMIN_FIRSTNAME ADMIN_LASTNAME; do echo "$k=$(dget "$k")"; done
