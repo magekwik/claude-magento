@@ -86,6 +86,7 @@ DB_USER magento
 DB_PASSWORD $(rand 20)
 DB_ROOT_PASSWORD $(rand 20)
 DB_DUMP
+MEDIA_ARCHIVE
 SEARCH_ENGINE opensearch
 SEARCH_HOST opensearch
 SEARCH_PORT 9200
@@ -121,8 +122,9 @@ EOF
       for k in ADMIN_URI ADMIN_USER ADMIN_PASSWORD ADMIN_EMAIL ADMIN_FIRSTNAME ADMIN_LASTNAME; do echo "$k=$(dget "$k")"; done
       echo
       echo "## Database (hostnames are service names inside the environment)"
-      for k in DB_HOST DB_NAME DB_USER DB_PASSWORD DB_ROOT_PASSWORD DB_DISTRIBUTION DB_DISTRIBUTION_VERSION DB_DUMP; do echo "$k=$(dget "$k")"; done
+      for k in DB_HOST DB_NAME DB_USER DB_PASSWORD DB_ROOT_PASSWORD DB_DISTRIBUTION DB_DISTRIBUTION_VERSION DB_DUMP MEDIA_ARCHIVE; do echo "$k=$(dget "$k")"; done
       echo "# DB_DUMP: optional. Put a sanitised dump at .magento-local/db.sql(.gz) and set DB_DUMP to that path to import it instead of a fresh install."
+      echo "# MEDIA_ARCHIVE: optional. Put pub/media as .magento-local/media.tar.gz (.tgz, .tar, .zip or a folder) and set MEDIA_ARCHIVE to that path; step 7 copies it in."
       echo
       echo "## Services"
       for k in SEARCH_ENGINE SEARCH_HOST SEARCH_PORT REDIS_HOST RABBITMQ_HOST PHP_VERSION MAGE_MODE INSTALL_SAMPLE_DATA CRYPT_KEY LOCALE CURRENCY TIMEZONE; do echo "$k=$(dget "$k")"; done

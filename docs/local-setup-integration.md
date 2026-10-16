@@ -2,7 +2,7 @@
 
 Working plan for the `feat/local-setup` branch — delete this file once every step below is done. Do not merge to `main` until fully tested: auto-publish is on, so every passing push to `main` ships.
 
-The five new files are already in place under `plugins/magento/` (nothing overwritten):
+The six new files are already in place under `plugins/magento/` (nothing overwritten):
 
 ```
 plugins/magento/commands/local-setup.md            the step-wise, resumable command prompt
@@ -10,6 +10,7 @@ plugins/magento/agents/local-setup-verifier.md     read-only health-check agent 
 plugins/magento/scripts/local-setup-detect.sh      host/OS/tool/port/dir detection → JSON
 plugins/magento/scripts/local-setup-env.sh         .magento-local.env ledger + credentials manager
 plugins/magento/scripts/local-setup-docker-magento.sh  docker-magento template copy (replaces upstream's curl | bash)
+plugins/magento/scripts/local-setup-media.sh       validates a user-placed media archive and streams it into the container
 ```
 
 Then apply the three edits below, run the checks, and release as 1.1.0.
@@ -26,7 +27,7 @@ Then apply the three edits below, run the checks, and release as 1.1.0.
 
 Guides you from an empty folder (or an existing repo) to a running Magento on **Warden, DDEV, docker-magento or Valet**, on macOS, Linux, WSL2 or Windows (DDEV). Asks only what it cannot detect: where, from what (git URL, latest Magento Open Source, or Mage-OS), and which tool.
 
-Everything it decides and every credential it generates lives in one git-ignored file, `.magento-local.env`, created up front with sensible pre-filled values you can edit before the step that uses them. When a step needs *you* — install Docker, run one `sudo`, add Marketplace keys, drop a sanitised DB dump at `.magento-local/db.sql.gz` — it stops, tells you exactly what to do, and `re-run /magekwik-magento:local-setup` picks up at that step. It never asks for or touches a live database.
+Everything it decides and every credential it generates lives in one git-ignored file, `.magento-local.env`, created up front with sensible pre-filled values you can edit before the step that uses them. When a step needs *you* — install Docker, run one `sudo`, add Marketplace keys, drop a sanitised DB dump at `.magento-local/db.sql.gz` or a media archive at `.magento-local/media.tar.gz` — it stops, tells you exactly what to do, and `re-run /magekwik-magento:local-setup` picks up at that step. It never asks for or touches a live database.
 
 | Step | Does |
 |---|---|
@@ -36,7 +37,7 @@ Everything it decides and every credential it generates lives in one git-ignored
 | 4 Prerequisites | checks Docker/tools; prints per-OS install steps and stops if missing |
 | 5 Scaffold | `warden env-init`, `ddev config`, docker-magento template, or Valet services; starts them |
 | 6 Code | `git clone` + `composer install`, or `composer create-project` (keys checked, never requested in chat) |
-| 7 Database | fresh `setup:install` from the ledger, or import of a dump *you* placed locally |
+| 7 Database | fresh `setup:install` from the ledger, or import of a dump *you* placed locally; optional media archive copied into the container |
 | 8 Configure | developer mode, base URLs, 2FA off, no cron, reindex |
 | 9 Verify | a read-only agent checks services, DB, search, storefront and admin → PASS/FAIL table |
 
@@ -56,7 +57,7 @@ Also extend the "What it touches" list:
 ### Added
 - `/magekwik-magento:local-setup`: guided, resumable local environment setup for Warden, DDEV, docker-magento and Valet on macOS/Linux/WSL2/Windows; new Magento Open Source / Mage-OS install or existing git repo; all choices and credentials in a git-ignored `.magento-local.env`.
 - `local-setup-verifier` agent: read-only post-setup health check.
-- `scripts/local-setup-detect.sh`, `scripts/local-setup-env.sh`, `scripts/local-setup-docker-magento.sh`.
+- `scripts/local-setup-detect.sh`, `scripts/local-setup-env.sh`, `scripts/local-setup-docker-magento.sh`, `scripts/local-setup-media.sh`.
 ```
 
 ## 4. Checks before merging

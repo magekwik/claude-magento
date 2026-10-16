@@ -25,6 +25,7 @@ DIR, LEDGER path (`.magento-local.env`), SETUP_ENV, the CLI prefix `$MAGE`, BASE
 | 9 | 2FA off (local) | `$MAGE bin/magento module:status Magento_TwoFactorAuth` reports disabled (skip if module absent) |
 | 10 | Secrets ignored by git | in CODE: `git check-ignore -q app/etc/env.php auth.json` and in DIR `git check-ignore -q .magento-local.env` each exit 0 (skip a file that does not exist; if DIR is not a git repo, PASS with note "not a repo") |
 | 11 | Cron not installed | `$MAGE bin/magento cron:install --help` not needed — instead check the container/host crontab is empty of `#~ MAGENTO START` (warden: `warden env exec -T php-fpm crontab -l`; ddev: `ddev exec crontab -l`; docker-magento: `bin/cli crontab -l`; valet: `crontab -l`). Missing crontab = PASS |
+| 12 | Media copied (only when `MEDIA_ARCHIVE` is set in LEDGER; else skip) | inside the container (Valet: on the host) `pub/media` holds files: `<exec> find pub/media -type f \| head -1` prints a path (warden: `warden env exec -T php-fpm …`, ddev: `ddev exec …`, docker-magento: `bin/cli …`) |
 
 ## Output (exact)
 

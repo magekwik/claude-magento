@@ -140,6 +140,13 @@ $MAGE bin/magento setup:install \
 ```
 Drop the three Redis groups when `REDIS_HOST` is empty or the tool has no Redis (Valet without `redis`). `--search-engine` value is `opensearch` or `elasticsearch7`; the host/port flags are `--opensearch-host/--opensearch-port` or `--elasticsearch-host/--elasticsearch-port`. Magento ≥ 2.4.6 defaults to OpenSearch. If `setup:install` fails on a missing `pub/static` write permission inside Warden, run the `mkdir` from step 5 and retry once. Any other failure: show the last 30 lines, mark `blocked` with the error summary, stop.
 
+**Media (optional, after A or B)** — only if `MEDIA_ARCHIVE` in LEDGER names a file or folder the user placed under `.magento-local/` (`.tar.gz`, `.tgz`, `.tar`, `.zip` or a folder; its contents are `pub/media`, optionally wrapped in one `media/` or `pub/media/` folder). Never fetch media from a live store or ask for server access. Validate first: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-media.sh" DIR --check` (refuses absolute or `..` paths, links, and anything outside `.magento-local/`; on refusal → **blocked** with its message). Then copy it **into the container**, not onto the host — Warden on macOS does not sync `pub/media` to the container, and DDEV/docker-magento treat it specially:
+- Warden: `local-setup-media.sh DIR --stream | warden env exec -T php-fpm tar -xf - -C pub/media`
+- DDEV: `local-setup-media.sh DIR --stream | ddev exec -s web tar -xf - -C pub/media`
+- docker-magento: `local-setup-media.sh DIR --stream | (cd DIR && bin/docker-compose exec -T phpfpm tar -xf - -C /var/www/html/pub/media)` (`/var/www/html` is a named volume, so the host's `src/pub/media` is not it)
+- Valet: `local-setup-media.sh DIR --into <CODE>/pub/media`
+Then `$MAGE bin/magento cache:flush`. Do not run `catalog:images:resize` (slow); mention it as optional.
+
 Sample data when `INSTALL_SAMPLE_DATA=yes`: `$MAGE bin/magento sampledata:deploy` (needs keys) then `setup:upgrade`.
 
 Mark step 7 `done`.
