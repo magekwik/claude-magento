@@ -131,7 +131,7 @@ CODE = DIR, or DIR/`SETUP_CODE_DIR` for docker-magento. Composer and `bin/magent
 
 Warden and DDEV on macOS sync code to the host with Mutagen, so files created in the container appear on the host only after the sync catches up: run host-side checks once `warden sync list` reports `Watching for changes` / after `ddev mutagen sync`, or check inside the container.
 
-After install: `local-setup-env.sh ignore DIR` again (the new repo now has a `.git`), confirm `auth.json`, `app/etc/env.php` and `.magento-local.env` are all ignored (`git check-ignore -q <file>`). Mark step 6 `done`.
+After install: `local-setup-env.sh ignore DIR` again (the new repo now has a `.git`; and if copying the project into place replaced `.gitignore`, this restores the entries — it adds only missing lines, so never save and re-append `.gitignore` by hand), confirm `auth.json`, `app/etc/env.php` and `.magento-local.env` are all ignored (`git check-ignore -q <file>`). Mark step 6 `done`.
 
 ## 7. Database
 
