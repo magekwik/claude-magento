@@ -38,7 +38,7 @@ for sh in $shells; do
   assert_not_contains "$t/caller/.git/info/exclude" "magento-local" "$sh A2 caller untouched"
 
   # A3. a git worktree: the shared exclude file is used, so the ledger is ignored there
-  mkdir "$t/main" && git -C "$t/main" init -q && git -C "$t/main" commit -q --allow-empty -m x
+  mkdir "$t/main" && git -C "$t/main" init -q && git -C "$t/main" -c user.name=t -c user.email=t@t commit -q --allow-empty -m x
   git -C "$t/main" worktree add -q "$t/wt" 2>/dev/null
   $sh "$S" init "$t/wt" > /dev/null 2>&1
   git -C "$t/wt" check-ignore -q .magento-local.env; assert_eq "$?" "0" "$sh A3 ignored in worktree"
