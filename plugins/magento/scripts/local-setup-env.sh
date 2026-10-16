@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Manages .magento-local.env — the single file that holds BOTH the step ledger and every local
 # credential for /magekwik-magento:local-setup. It is created pre-filled, read by every step,
-# updated as steps complete, and printed at the end. It is never committed: `init` adds it to
+# updated as steps complete, and shown (secrets masked) at the end. It is never committed: `init` adds it to
 # .git/info/exclude (repo-local, works in any clone) and to .gitignore when one exists.
 #
 # Usage:
@@ -12,7 +12,7 @@
 #   local-setup-env.sh step  <dir> N STATE [NOTE]  record step N (1-9) as pending|done|blocked with an optional note
 #   local-setup-env.sh next  <dir>               print the first step number that is not done (10 = all done)
 #   local-setup-env.sh status <dir>              print the ledger as a table
-#   local-setup-env.sh show  <dir>               print the whole file (credential summary)
+#   local-setup-env.sh show  <dir>               print the file with every secret (passwords, CRYPT_KEY) masked
 #   local-setup-env.sh ignore <dir>              (re)apply the git ignore rules only
 set -euo pipefail
 
@@ -191,7 +191,8 @@ EOF
     ;;
   show)
     [ -f "$path" ] || { echo "missing: $path" >&2; exit 1; }
-    cat "$path"
+    # Secrets stay in the file: the output lands in the chat transcript.
+    sed -E 's/^([A-Z_]*(PASSWORD|CRYPT_KEY))=.+$/\1=******** (in this file)/' "$path"
     ;;
   ignore) ignore_file; echo "ignored: $FILE" ;;
   *) sed -n '2,15p' "$0"; exit 1 ;;

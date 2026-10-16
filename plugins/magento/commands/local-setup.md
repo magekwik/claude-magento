@@ -15,6 +15,7 @@ You are setting up a **local** Magento 2 development environment for the user, o
 - **Ask with the AskUserQuestion tool** when it is available; otherwise ask in plain text and stop until answered. Ask only what the ledger does not already answer. Arguments (`$ARGUMENTS`) pre-answer questions: `--dir`, `--env`, `--repo`, `--new`, `--distro`, `--db-dump`, `--media` (the last two set `DB_DUMP` / `MEDIA_ARCHIVE` in LEDGER, as paths under `.magento-local/`).
 - **Prefix every Magento/Composer command for the chosen environment** (`$MAGE` below). The table and per-tool details are in `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` — read it once at step 5. In non-TTY runs add `-T` for Warden and Compose. `$MAGE` is notation, not a shell variable: write the prefix out, or define a function (`M() { warden env exec -T php-fpm bin/magento "$@"; }`) — zsh does not word-split an unquoted variable, so `$M bin/magento` fails there.
 - **Write nothing outside the target directory** except the tool's own global config (`~/.warden`, `~/.ddev`, Valet's config) which the tools write themselves, and the empty `~/.composer` and `~/.ssh` directories docker-magento mounts.
+- **Never print a secret.** Passwords and `CRYPT_KEY` live only in `.magento-local.env`; your output becomes the chat transcript. In messages, hand-overs and blocked notes, name the key and the file instead (`DB_PASSWORD in <DIR>/.magento-local.env`), never the value. Don't `cat` LEDGER; use `get` for a single value a command needs, and `show` (it masks secrets) to display it.
 - Keep output short: one line per action, no narration of what you are about to do.
 
 Helper scripts (always via `bash "${CLAUDE_PLUGIN_ROOT}/scripts/…"`):
@@ -29,7 +30,7 @@ Helper scripts (always via `bash "${CLAUDE_PLUGIN_ROOT}/scripts/…"`):
 
 1. Parse `$ARGUMENTS`. `--status` → run `local-setup-env.sh status .` (or the `--dir`) and stop. `--reset` → confirm with the user, delete `.magento-local.env` only (never project files), then continue as a fresh run.
 2. DIR = `--dir` if given, else the current directory. Run DETECT on DIR.
-3. If `DETECT.dir.setup_file` is true: `N = local-setup-env.sh next DIR`. If N = 10 print the ledger `show` output and stop ("already complete"). Otherwise print `Resuming at step N (<name>)` plus `LAST_NOTE` if set, and jump to that step. Every value a resumed step needs comes from LEDGER (`get`), never from re-asking.
+3. If `DETECT.dir.setup_file` is true: `N = local-setup-env.sh next DIR`. If N = 10 print the step-9 hand-over block and stop ("already complete"). Otherwise print `Resuming at step N (<name>)` plus `LAST_NOTE` if set, and jump to that step. Every value a resumed step needs comes from LEDGER (`get`), never from re-asking.
 4. Otherwise start at step 1.
 
 ## 1. Target directory
@@ -114,7 +115,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` now. Work in DIR.
 6. `bin/start --no-dev` (pulls images; several minutes). Upstream's own install flow starts without the dev mounts while `src/` is still empty — `bin/start` in dev mode refuses to start when the `src/` files it mounts are missing. `bin/start` needs at least 6 GB of Docker memory; if containers are OOM-killed, **blocked**: free memory or raise Docker's limit — never stop the user's other projects yourself.
 
 **valet**
-1. `valet park` is not used; use `valet link <PROJECT_NAME>` from the code directory **after** step 6 — record `SETUP_VALET_LINK=pending`. Here: ensure services run (`brew services list` / `systemctl status`), create the database as root using `DB_ROOT_PASSWORD` only if the local MySQL has no root password yet (`mysql -uroot -e "CREATE DATABASE IF NOT EXISTS \`<DB_NAME>\`; CREATE USER IF NOT EXISTS '<DB_USER>'@'localhost' IDENTIFIED BY '<DB_PASSWORD>'; GRANT ALL ON \`<DB_NAME>\`.* TO '<DB_USER>'@'localhost';"`). If `mysql -uroot` needs a password you do not have → **blocked**: give the exact `CREATE …` statements and resume. Set `DOMAIN=<PROJECT_NAME>.test` (Valet's default TLD; read `valet tld` if changed).
+1. `valet park` is not used; use `valet link <PROJECT_NAME>` from the code directory **after** step 6 — record `SETUP_VALET_LINK=pending`. Here: ensure services run (`brew services list` / `systemctl status`), create the database as root using `DB_ROOT_PASSWORD` only if the local MySQL has no root password yet (`mysql -uroot -e "CREATE DATABASE IF NOT EXISTS \`<DB_NAME>\`; CREATE USER IF NOT EXISTS '<DB_USER>'@'localhost' IDENTIFIED BY '<DB_PASSWORD>'; GRANT ALL ON \`<DB_NAME>\`.* TO '<DB_USER>'@'localhost';"`). If `mysql -uroot` needs a password you do not have → **blocked**: give the exact `CREATE …` statements for the user to run with `mysql -uroot -p`, with the password written as `$(sed -n 's/^DB_PASSWORD=//p' <DIR>/.magento-local.env)` so its value never appears in the chat, and resume. Set `DOMAIN=<PROJECT_NAME>.test` (Valet's default TLD; read `valet tld` if changed).
 
 Mark step 5 `done` only when services report healthy (`warden env ps` / `ddev describe` / `bin/status` / `brew services`).
 
@@ -194,15 +195,16 @@ For an imported dump additionally reset the admin: `admin:user:create --admin-us
 
 1. Dispatch the `local-setup-verifier` agent with: DIR, the full LEDGER path, `SETUP_ENV`, `$MAGE` prefix, `BASE_URL`, `ADMIN_URI`. It is read-only and returns a `PASS`/`FAIL` table.
 2. If any FAIL: fix what you can in this run (one retry per check: e.g. `cache:flush`, `indexer:reindex`, `warden env up`), re-dispatch once; still failing → mark step 9 `blocked` with the failing check names and stop with the agent's fix hints.
-3. All PASS: mark step 9 `done`. When a dump was imported, say the store uses the `CRYPT_KEY` from LEDGER and that encrypted settings decrypt only if it is the source store's key — you cannot tell whether it is, so do not claim either way. Do not run `/magekwik-magento:init` yourself; say one line: "Run `/magekwik-magento:init` to write CLAUDE.md for this project." Then print `local-setup-env.sh show DIR` verbatim, preceded by:
+3. All PASS: mark step 9 `done`. When a dump was imported, say the store uses the `CRYPT_KEY` from LEDGER and that encrypted settings decrypt only if it is the source store's key — you cannot tell whether it is, so do not claim either way. Do not run `/magekwik-magento:init` yourself; say one line: "Run `/magekwik-magento:init` to write CLAUDE.md for this project." Then print exactly this (no password or key values; do not print `show` here):
 
 ```
 Local environment ready — <SETUP_ENV> at <DIR>
 Store:  <BASE_URL>
-Admin:  <BASE_URL><ADMIN_URI>   user <ADMIN_USER>   password <ADMIN_PASSWORD>
-DB:     <DB_USER>/<DB_PASSWORD> @ <DB_HOST>/<DB_NAME>   (root <DB_ROOT_PASSWORD>)
+Admin:  <BASE_URL><ADMIN_URI>   user <ADMIN_USER>
+DB:     <DB_USER> @ <DB_HOST>/<DB_NAME>
 CLI:    <$MAGE> bin/magento …
-Credentials file: <DIR>/.magento-local.env (git-ignored; keep it, it is the only copy)
+Passwords: <DIR>/.magento-local.env — ADMIN_PASSWORD, DB_PASSWORD, DB_ROOT_PASSWORD, CRYPT_KEY
+           (git-ignored; keep it, it is the only copy)
 ```
 
 ## Resume contract (what "blocked" prints)

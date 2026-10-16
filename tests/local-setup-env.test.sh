@@ -94,6 +94,13 @@ for sh in $shells; do
   for n in 2 3 4 5 6 7 8 9; do $sh "$S" step "$t/a" "$n" "done"; done
   assert_eq "$($sh "$S" next "$t/a")" "10" "$sh F all done"
   $sh "$S" status "$t/a" > /dev/null; assert_eq "$?" "0" "$sh F status exits 0 with no note"
+  # show masks every secret but keeps the rest of the file
+  $sh "$S" show "$t/a" > "$t/show.out"
+  assert_eq "$(grep -cE '^(ADMIN_PASSWORD|DB_PASSWORD|DB_ROOT_PASSWORD|CRYPT_KEY)=\*{8} \(in this file\)$' "$t/show.out")" "4" "$sh F show masks all four secrets"
+  pw="$(grep '^DB_PASSWORD=' "$t/a/.magento-local.env" | cut -d= -f2-)"
+  assert_eq "$(grep -c -- "$pw" "$t/show.out")" "0" "$sh F show never prints the DB password"
+  assert_contains "$t/show.out" "^STEP_9_VERIFY=done$" "$sh F show keeps the ledger"
+  assert_contains "$t/show.out" "^ADMIN_USER=admin$" "$sh F show keeps non-secrets"
   # a repo that already has a committed .gitignore: exclude only, the .gitignore is left untouched
   mkdir "$t/f2" && git -C "$t/f2" init -q && printf '/vendor/\n' > "$t/f2/.gitignore"
   $sh "$S" init "$t/f2" > /dev/null
