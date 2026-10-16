@@ -29,16 +29,21 @@ esac
 arch="$(uname -m 2>/dev/null || echo unknown)"
 
 # --- tools ---
-ver() { # ver <cmd> <args…> → first line of output, trimmed, or empty
+ver_raw() { # ver_raw <cmd> <args…> → first line of output, trimmed, or empty
   local c="$1"; shift
   command -v "$c" >/dev/null 2>&1 || { printf ''; return; }
   "$c" "$@" 2>/dev/null | head -1 | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
+ver() { # like ver_raw, but a command that exists is never reported absent just because its version flag printed nothing
+  local v; v="$(ver_raw "$@")"
+  if [ -z "$v" ] && command -v "$1" >/dev/null 2>&1; then v="installed (version unknown)"; fi
+  printf '%s' "$v"
+}
 t_docker="$(ver docker --version)"
-t_compose="$(ver docker compose version)"
+t_compose="$(ver_raw docker compose version)"   # raw: docker present without the compose plugin must stay null
 docker_running=false
 if [ -n "$t_docker" ] && docker info >/dev/null 2>&1; then docker_running=true; fi
-t_warden="$(ver warden --version)"
+t_warden="$(ver warden version)"   # warden has no --version flag ("Unsupported flag"); `warden version` prints e.g. 0.15.0
 t_ddev="$(ver ddev --version)"
 t_valet="$(ver valet --version)"
 t_php="$(ver php --version)"

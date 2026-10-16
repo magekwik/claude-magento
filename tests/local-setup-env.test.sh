@@ -92,6 +92,19 @@ for sh in $shells; do
   assert_eq "$(json_get "$t/h.json" dir.setup_file)" "false" "$sh H no setup file"
   case "$(json_get "$t/h.json" recommend)" in warden|ddev|docker-magento|valet) r=ok ;; *) r=bad ;; esac
   assert_eq "$r" "ok" "$sh H recommend is a known tool"
+
+  # I. tool detection uses each tool's real version syntax. Stubs: warden rejects --version like the
+  #    real one (0.15) and answers `warden version`; ddev prints nothing; docker has no compose plugin.
+  stub="$t/stub" && mkdir -p "$stub"
+  printf '#!/bin/sh\n[ "$1" = version ] && { echo 0.15.0; exit 0; }\necho "ERROR: Unsupported flag $1" >&2; exit 1\n' > "$stub/warden"
+  printf '#!/bin/sh\nexit 0\n' > "$stub/ddev"
+  printf '#!/bin/sh\n[ "$1" = --version ] && { echo "Docker version 99"; exit 0; }\nexit 1\n' > "$stub/docker"
+  chmod +x "$stub"/*
+  PATH="$stub:$PATH" $sh "$D" "$t/h" > "$t/i.json" 2>/dev/null
+  assert_eq "$(json_get "$t/i.json" tools.warden)" "0.15.0" "$sh I warden detected via 'warden version'"
+  assert_eq "$(json_get "$t/i.json" tools.ddev)" "installed (version unknown)" "$sh I silent tool still detected"
+  assert_eq "$(json_get "$t/i.json" tools.docker_compose)" "null" "$sh I docker without compose plugin"
+  assert_eq "$(json_get "$t/i.json" recommend)" "warden" "$sh I installed warden recommended"
 done
 
 rm -rf "$tmp"
