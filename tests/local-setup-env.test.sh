@@ -71,7 +71,7 @@ for sh in $shells; do
 
   # F. step ledger: next follows done/blocked
   assert_eq "$($sh "$S" next "$t/a")" "1" "$sh F next starts at 1"
-  $sh "$S" step "$t/a" 1 "done"
+  $sh "$S" step "$t/a" 1 "done"; assert_eq "$?" "0" "$sh F step without a note exits 0"
   $sh "$S" step "$t/a" 2 blocked "install ddev"
   assert_eq "$($sh "$S" next "$t/a")" "2" "$sh F next after blocked"
   assert_contains "$t/a/.magento-local.env" "^STEP_2_SOURCE=blocked$" "$sh F step 2 blocked"
@@ -84,6 +84,12 @@ for sh in $shells; do
   assert_eq "$($sh "$S" get "$t/a" DB_PASSWORD)" 'a|b&c$d\e/f' "$sh G round-trip existing key"
   $sh "$S" set "$t/a" NEW_KEY 'x|y&z'
   assert_eq "$($sh "$S" get "$t/a" NEW_KEY)" 'x|y&z' "$sh G round-trip new key"
+  $sh "$S" set "$t/a" DB_HOST=db DB_NAME=db 'CRYPT_KEY=a=b|c'; assert_eq "$?" "0" "$sh G KEY=VALUE pairs exit 0"
+  assert_eq "$($sh "$S" get "$t/a" DB_HOST)/$($sh "$S" get "$t/a" DB_NAME)" "db/db" "$sh G KEY=VALUE pairs set"
+  assert_eq "$($sh "$S" get "$t/a" CRYPT_KEY)" 'a=b|c' "$sh G value keeps later '='"
+  $sh "$S" set "$t/a" SEARCH_HOST 'x=y'; assert_eq "$($sh "$S" get "$t/a" SEARCH_HOST)" 'x=y' "$sh G KEY VALUE with '=' in value"
+  $sh "$S" set "$t/a" DB_HOST=x stray > /dev/null 2>&1; assert_eq "$?" "1" "$sh G mixed pair and bare word refused"
+  $sh "$S" set "$t/a" DB_HOST > /dev/null 2>&1; assert_eq "$?" "1" "$sh G missing value refused"
 
   # H. detect on an empty dir: valid JSON, empty, a known recommendation
   mkdir "$t/h"

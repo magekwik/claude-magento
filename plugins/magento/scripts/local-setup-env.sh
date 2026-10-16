@@ -8,6 +8,7 @@
 #   local-setup-env.sh init  <dir> KEY=VALUE…   create the file (no-op if present) with defaults + overrides, then ignore it
 #   local-setup-env.sh get   <dir> KEY           print the value ("" if unset)
 #   local-setup-env.sh set   <dir> KEY VALUE     set or add a key (in place)
+#   local-setup-env.sh set   <dir> KEY=VALUE…    same, for one or more pairs
 #   local-setup-env.sh step  <dir> N STATE [NOTE]  record step N (1-9) as pending|done|blocked with an optional note
 #   local-setup-env.sh next  <dir>               print the first step number that is not done (10 = all done)
 #   local-setup-env.sh status <dir>              print the ledger as a table
@@ -140,13 +141,26 @@ EOF
     echo "created: $path"
     ;;
   get)   get "$1" ;;
-  set)   set_kv "$1" "$2" ;;
+  set)
+    case "${1:-}" in
+      *=*) # KEY=VALUE… pairs; a key never contains "=", so the first "=" splits key from value
+        for kv in "$@"; do
+          k="${kv%%=*}"
+          case "$kv" in *=*) ;; *) echo "expected KEY=VALUE, got: $kv" >&2; exit 1 ;; esac
+          case "$k" in ''|[0-9]*|*[!A-Za-z0-9_]*) echo "invalid key: $k" >&2; exit 1 ;; esac
+          set_kv "$k" "${kv#*=}"
+        done ;;
+      *) [ $# -eq 2 ] || { echo "usage: set <dir> KEY VALUE | set <dir> KEY=VALUE…" >&2; exit 1; }
+         case "$1" in ''|[0-9]*|*[!A-Za-z0-9_]*) echo "invalid key: $1" >&2; exit 1 ;; esac
+         set_kv "$1" "$2" ;;
+    esac
+    ;;
   step)
     n="$1"; state="$2"; note="${3:-}"
     key="$(grep -o "^STEP_${n}_[A-Z]*" "$path" | head -1)"
     [ -n "$key" ] || { echo "no step $n" >&2; exit 1; }
     set_kv "$key" "$state"
-    [ -n "$note" ] && set_kv "LAST_NOTE" "[step $n $state] $note"
+    if [ -n "$note" ]; then set_kv "LAST_NOTE" "[step $n $state] $note"; fi
     ;;
   next)
     for n in 1 2 3 4 5 6 7 8 9; do
