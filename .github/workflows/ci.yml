@@ -35,7 +35,8 @@ jobs:
       - name: no Magekwik-specific content in the plugin
         run: |
           # The plugin namespace (magekwik-magento:…, magekwik-magento@…) is allowed; anything else naming Magekwik or its stores is not.
-          ! grep -rniE 'magekwik|litemage\.magekwik|idea89' plugins/magento --exclude=README.md --exclude=plugin.json \
+          # README.md, plugin.json and icon.svg are the plugin's own branding (publisher, display name, icon label).
+          ! grep -rniE 'magekwik|litemage\.magekwik|idea89' plugins/magento --exclude=README.md --exclude=plugin.json --exclude=icon.svg \
             | grep -viE 'magekwik-magento[:@]'
 
   evals:
