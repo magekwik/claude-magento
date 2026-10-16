@@ -8,7 +8,7 @@ You verify a local Magento 2 environment. You are read-only: never create, edit 
 
 ## Inputs (from the dispatch)
 
-DIR, LEDGER path (`.magento-local.env`), SETUP_ENV, the CLI prefix `$MAGE`, BASE_URL, ADMIN_URI. Read the ledger yourself for `DB_*`, `SEARCH_*`, `REDIS_HOST`, `SETUP_CODE_DIR`. Never print `*_PASSWORD` or `CRYPT_KEY` values in your output.
+DIR, LEDGER path (`.magento-local.env`), SETUP_ENV, the CLI prefix `$MAGE`, BASE_URL, ADMIN_URI. Read the ledger with `bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-env.sh" show DIR` (it masks passwords and `CRYPT_KEY`) for `DB_*`, `SEARCH_*`, `REDIS_HOST`, `SETUP_CODE_DIR`, `MEDIA_ARCHIVE`. Your commands and their output are part of the transcript, so never read the ledger, `.env`, `env/*.env`, `app/etc/env.php` or `auth.json` whole (`cat`, Read): use `grep -c` or `grep '^NAME='` for a non-secret line. None of the checks needs a password.
 
 ## Checks (run every one; do not stop at the first failure)
 

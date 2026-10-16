@@ -101,6 +101,22 @@ for sh in $shells; do
   assert_eq "$(grep -c -- "$pw" "$t/show.out")" "0" "$sh F show never prints the DB password"
   assert_contains "$t/show.out" "^STEP_9_VERIFY=done$" "$sh F show keeps the ledger"
   assert_contains "$t/show.out" "^ADMIN_USER=admin$" "$sh F show keeps non-secrets"
+  # write-env: secrets copied from the ledger, never printed; other lines and the file's mode kept
+  printf 'WARDEN_ENV_TYPE=magento2\nMYSQL_PASSWORD=magento\nTRAEFIK_DOMAIN=x.test' > "$t/a/.env"; chmod 640 "$t/a/.env"
+  out="$($sh "$S" write-env "$t/a" .env MYSQL_PASSWORD=@DB_PASSWORD MYSQL_ROOT_PASSWORD=@DB_ROOT_PASSWORD TRAEFIK_DOMAIN=app.a.test WARDEN_REDIS=1)"
+  assert_eq "$?" "0" "$sh G write-env exits 0"
+  assert_eq "$(echo "$out" | grep -c -- "$pw")" "0" "$sh G write-env never prints a secret"
+  assert_contains "$t/a/.env" "^MYSQL_PASSWORD=$pw$" "$sh G existing key set from the ledger"
+  assert_contains "$t/a/.env" "^MYSQL_ROOT_PASSWORD=$(grep '^DB_ROOT_PASSWORD=' "$t/a/.magento-local.env" | cut -d= -f2-)$" "$sh G missing key added from the ledger"
+  assert_contains "$t/a/.env" "^TRAEFIK_DOMAIN=app.a.test$" "$sh G literal value set (last line had no newline)"
+  assert_contains "$t/a/.env" "^WARDEN_ENV_TYPE=magento2$" "$sh G other lines kept"
+  assert_eq "$(grep -c '^MYSQL_PASSWORD=' "$t/a/.env")" "1" "$sh G no duplicate key"
+  assert_eq "$(ls -l "$t/a/.env" | cut -c1-10)" "-rw-r-----" "$sh G file mode kept"
+  $sh "$S" write-env "$t/a" .env X=@NO_SUCH_KEY > /dev/null 2>&1; assert_eq "$?" "1" "$sh G unknown ledger key refused"
+  $sh "$S" write-env "$t/a" .env "bad-name=1" > /dev/null 2>&1; assert_eq "$?" "1" "$sh G bad name refused"
+  $sh "$S" write-env "$t/a" .env > /dev/null 2>&1; assert_eq "$?" "1" "$sh G no pairs refused"
+  mkdir -p "$t/a/env"; $sh "$S" write-env "$t/a" env/db.env MYSQL_DATABASE=@DB_NAME > /dev/null
+  assert_contains "$t/a/env/db.env" "^MYSQL_DATABASE=magento$" "$sh G new file in a subfolder"
   # a repo that already has a committed .gitignore: exclude only, the .gitignore is left untouched
   mkdir "$t/f2" && git -C "$t/f2" init -q && printf '/vendor/\n' > "$t/f2/.gitignore"
   $sh "$S" init "$t/f2" > /dev/null

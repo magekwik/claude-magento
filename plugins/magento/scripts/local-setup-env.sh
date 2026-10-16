@@ -14,6 +14,10 @@
 #   local-setup-env.sh status <dir>              print the ledger as a table
 #   local-setup-env.sh show  <dir>               print the file with every secret (passwords, CRYPT_KEY) masked
 #   local-setup-env.sh ignore <dir>              (re)apply the git ignore rules only
+#   local-setup-env.sh write-env <dir> <file> NAME=VALUE|NAME=@KEY…
+#                                                set NAME in a KEY=VALUE file (Warden .env, docker-magento env/*.env);
+#                                                @KEY copies the ledger's KEY, so secrets never pass through the chat.
+#                                                <file> is relative to <dir> unless absolute. Prints the names only.
 set -euo pipefail
 
 FILE=".magento-local.env"
@@ -195,5 +199,35 @@ EOF
     sed -E 's/^([A-Z_]*(PASSWORD|CRYPT_KEY))=.+$/\1=******** (in this file)/' "$path"
     ;;
   ignore) ignore_file; echo "ignored: $FILE" ;;
-  *) sed -n '2,15p' "$0"; exit 1 ;;
+  write-env)
+    f="${1:-}"; [ -n "$f" ] && [ $# -ge 2 ] || { echo "usage: write-env <dir> <file> NAME=VALUE|NAME=@KEY…" >&2; exit 1; }
+    shift
+    case "$f" in /*) ;; *) f="$dir/$f" ;; esac
+    [ -f "$path" ] || { echo "missing: $path" >&2; exit 1; }
+    touch "$f"; names=""
+    for kv in "$@"; do
+      case "$kv" in *=*) ;; *) echo "expected NAME=VALUE, got: $kv" >&2; exit 1 ;; esac
+      k="${kv%%=*}"; v="${kv#*=}"
+      case "$k" in ''|[0-9]*|*[!A-Za-z0-9_]*) echo "invalid name: $k" >&2; exit 1 ;; esac
+      case "$v" in
+        @*) src="${v#@}"
+            case "$src" in ''|[0-9]*|*[!A-Za-z0-9_]*) echo "invalid ledger key: $src" >&2; exit 1 ;; esac
+            grep -q "^$src=" "$path" || { echo "no ledger key: $src" >&2; exit 1; }
+            v="$(get "$src")" ;;
+      esac
+      if grep -q "^$k=" "$f"; then
+        tmp="$f.tmp.$$"
+        while IFS= read -r line || [ -n "$line" ]; do
+          case "$line" in "$k="*) printf '%s=%s\n' "$k" "$v" ;; *) printf '%s\n' "$line" ;; esac
+        done < "$f" > "$tmp"
+        cat "$tmp" > "$f"; rm -f "$tmp"   # rewrite in place: keeps the file's mode and any bind mount
+      else
+        if [ -s "$f" ] && [ -n "$(tail -c1 "$f")" ]; then echo >> "$f"; fi
+        printf '%s=%s\n' "$k" "$v" >> "$f"
+      fi
+      names="$names $k"
+    done
+    echo "wrote:$names → $f"
+    ;;
+  *) sed -n '2,20p' "$0"; exit 1 ;;
 esac
