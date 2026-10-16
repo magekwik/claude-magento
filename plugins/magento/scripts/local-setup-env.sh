@@ -37,8 +37,10 @@ ignore_file() {
     grep -qxF "$FILE" "$ex" 2>/dev/null || printf '%s\n' "$FILE" >> "$ex"
     grep -qxF ".magento-local/" "$ex" 2>/dev/null || printf '%s\n' ".magento-local/" >> "$ex"
   fi
-  if [ -f "$dir/.gitignore" ]; then
-    grep -qxF "$FILE" "$dir/.gitignore" || printf '\n# local setup ledger + credentials (/magekwik-magento:local-setup)\n%s\n.magento-local/\n' "$FILE" >> "$dir/.gitignore"
+  # Also .gitignore when one exists — and create it when $dir is not in a repo yet, so a later
+  # `git init && git add -A` cannot commit the credentials.
+  if [ -f "$dir/.gitignore" ] || ! git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
+    grep -qxF "$FILE" "$dir/.gitignore" 2>/dev/null || printf '\n# local setup ledger + credentials (/magekwik-magento:local-setup)\n%s\n.magento-local/\n' "$FILE" >> "$dir/.gitignore"
   fi
 }
 
@@ -68,6 +70,7 @@ SETUP_GIT_URL
 SETUP_GIT_BRANCH
 SETUP_DISTRO magento
 SETUP_MAGENTO_VERSION latest
+SETUP_CODE_DIR .
 PROJECT_NAME magento
 DOMAIN
 BASE_URL
@@ -112,7 +115,7 @@ EOF
       echo "# Every credential here is local-only and randomly generated — nothing was read from any live system."
       echo
       echo "## Target"
-      for k in SETUP_VERSION SETUP_ENV SETUP_OS SETUP_DIR SETUP_SOURCE SETUP_GIT_URL SETUP_GIT_BRANCH SETUP_DISTRO SETUP_MAGENTO_VERSION PROJECT_NAME DOMAIN BASE_URL; do echo "$k=$(dget "$k")"; done
+      for k in SETUP_VERSION SETUP_ENV SETUP_OS SETUP_DIR SETUP_SOURCE SETUP_GIT_URL SETUP_GIT_BRANCH SETUP_DISTRO SETUP_MAGENTO_VERSION SETUP_CODE_DIR PROJECT_NAME DOMAIN BASE_URL; do echo "$k=$(dget "$k")"; done
       echo
       echo "## Admin (use these to log in)"
       for k in ADMIN_URI ADMIN_USER ADMIN_PASSWORD ADMIN_EMAIL ADMIN_FIRSTNAME ADMIN_LASTNAME; do echo "$k=$(dget "$k")"; done

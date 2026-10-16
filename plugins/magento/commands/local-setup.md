@@ -13,7 +13,7 @@ You are setting up a **local** Magento 2 development environment for the user, o
 - **Human intervention stops the run, cleanly.** When a step needs something only the user can do (install Docker, run a `sudo` command, add Composer keys, drop in a DB dump, open a new shell after an install), do everything you can, mark the step `blocked` with a note, print exactly what they must do, then end with: `Finish that, then re-run /magekwik-magento:local-setup to resume from step N.` Do not loop, poll, or wait.
 - **No live systems.** Never ask for, connect to, or read credentials of any staging/production database, host, API or admin. Every credential is generated locally into `.magento-local.env`. If the user wants real data, the only path is a sanitised dump they place at `.magento-local/db.sql` or `.sql.gz` themselves (step 7).
 - **Ask with the AskUserQuestion tool** when it is available; otherwise ask in plain text and stop until answered. Ask only what the ledger does not already answer. Arguments (`$ARGUMENTS`) pre-answer questions: `--dir`, `--env`, `--repo`, `--new`, `--distro`.
-- **Prefix every Magento/Composer command for the chosen environment** (`$MAGE` below). The table and per-tool details are in `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` — read it once at step 5. In non-TTY runs add `-T` for Warden and Compose.
+- **Prefix every Magento/Composer command for the chosen environment** (`$MAGE` below). The table and per-tool details are in `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` — read it once at step 5. In non-TTY runs add `-T` for Warden and Compose. `$MAGE` is notation, not a shell variable: write the prefix out, or define a function (`M() { warden env exec -T php-fpm bin/magento "$@"; }`) — zsh does not word-split an unquoted variable, so `$M bin/magento` fails there.
 - **Write nothing outside the target directory** except the tool's own global config (`~/.warden`, `~/.ddev`, Valet's config) which the tools write themselves, and the empty `~/.composer` and `~/.ssh` directories docker-magento mounts.
 - Keep output short: one line per action, no narration of what you are about to do.
 
@@ -115,6 +115,8 @@ CODE = DIR, or DIR/`SETUP_CODE_DIR` for docker-magento. Composer and `bin/magent
 
 **Keys (Magento, not Mage-OS):** `auth.json` at CODE root (git-ignored) or `~/.composer/auth.json` with `http-basic.repo.magento.com`. If absent → **blocked**: tell the user to create it (`composer config --global http-basic.repo.magento.com <public-key> <private-key>` — keys from marketplace.magento.com → My Profile → Access Keys), and resume. Never ask them to paste keys into the chat.
 
+Warden on macOS syncs code to the host with Mutagen, so files created in the container appear on the host only after the sync catches up: run host-side checks once `warden sync list` reports `Watching for changes`, or check inside the container.
+
 After install: `local-setup-env.sh ignore DIR` again (the new repo now has a `.git`), confirm `auth.json`, `app/etc/env.php` and `.magento-local.env` are all ignored (`git check-ignore -q <file>`). Mark step 6 `done`.
 
 ## 7. Database
@@ -147,7 +149,8 @@ Mark step 7 `done`.
 All through `$MAGE bin/magento …` (`config:set` writes DB config; `--lock-env` writes `env.php`):
 ```
 deploy:mode:set developer
-module:disable Magento_TwoFactorAuth Magento_AdminAdobeImsTwoFactorAuth   # local only; say so
+module:disable <the 2FA modules module:status lists>   # local only; say so. Magento_TwoFactorAuth, plus Magento_AdminAdobeImsTwoFactorAuth where it exists (not on Mage-OS) — one unknown name fails the whole command
+setup:upgrade   # drops the disabled modules' tables, so setup:db:status is clean for the verifier
 config:set --lock-env web/unsecure/base_url <BASE_URL>   # https BASE_URL for both
 config:set --lock-env web/secure/base_url <BASE_URL>
 config:set --lock-env web/secure/use_in_frontend 1

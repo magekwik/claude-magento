@@ -30,6 +30,8 @@ for sh in $shells; do
   assert_eq "$(find "$t/a/.magento-local.env" -perm 0600 | wc -l | tr -d ' ')" "1" "$sh A chmod 600"
   assert_contains "$t/a/.git/info/exclude" "^\.magento-local\.env$" "$sh A excluded"
   git -C "$t/a" check-ignore -q .magento-local.env; assert_eq "$?" "0" "$sh A check-ignore"
+  assert_eq "$([ -e "$t/a/.gitignore" ] && echo yes || echo no)" "no" "$sh A repo without .gitignore gets none (exclude is enough)"
+  assert_contains "$t/a/.magento-local.env" "^SETUP_CODE_DIR=\.$" "$sh A SETUP_CODE_DIR default"
 
   # A2. run from inside another repo: the ignore rules land in the target, never in the caller
   mkdir "$t/caller" "$t/a2" && git -C "$t/caller" init -q && git -C "$t/a2" init -q
@@ -50,6 +52,10 @@ for sh in $shells; do
   assert_contains "$t/b/.magento-local.env" "^SETUP_OS=macos$" "$sh B override SETUP_OS"
   assert_contains "$t/b/.magento-local.env" "^DB_HOST=127\.0\.0\.1$" "$sh B override DB_HOST"
   assert_contains "$t/b/.magento-local.env" "^DOMAIN=acme\.test$" "$sh B DOMAIN from override"
+  # B2. not a repo: .gitignore is created, so a later `git init && git add -A` leaves the ledger out
+  assert_contains "$t/b/.gitignore" "^\.magento-local\.env$" "$sh B2 .gitignore created outside a repo"
+  git -C "$t/b" init -q && git -C "$t/b" add -A
+  assert_eq "$(git -C "$t/b" diff --cached --name-only | grep -c 'magento-local' )" "0" "$sh B2 ledger not staged after git init"
 
   # C. a directory with spaces keeps its full path
   mkdir "$t/c d"
