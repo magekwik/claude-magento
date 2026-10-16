@@ -54,6 +54,11 @@ for sh in $shells; do
   assert_contains "$t/b/.magento-local.env" "^DOMAIN=acme\.test$" "$sh B DOMAIN from override"
   # B2. not a repo: .gitignore is created, so a later `git init && git add -A` leaves the ledger out
   assert_contains "$t/b/.gitignore" "^\.magento-local\.env$" "$sh B2 .gitignore created outside a repo"
+  assert_contains "$t/b/.gitignore" "^/auth\.json$" "$sh B2 auth.json ignored"
+  assert_contains "$t/b/.gitignore" "^/app/etc/env\.php$" "$sh B2 env.php ignored"
+  $sh "$S" ignore "$t/b" > /dev/null
+  assert_eq "$(grep -c 'local setup ledger' "$t/b/.gitignore")" "1" "$sh B2 ignore is idempotent"
+  assert_contains "$t/a/.git/info/exclude" "^/app/etc/env\.php$" "$sh B2 env.php in repo exclude"
   git -C "$t/b" init -q && git -C "$t/b" add -A
   assert_eq "$(git -C "$t/b" diff --cached --name-only | grep -c 'magento-local' )" "0" "$sh B2 ledger not staged after git init"
 
