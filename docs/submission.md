@@ -54,8 +54,12 @@ The review pipeline runs `claude plugin validate` plus automated safety screenin
 - Release: `v1.0.1` (slug renamed from `magento` to `magekwik-magento` before first submission)
 - License: MIT
 - Keywords: magento, magento2, adobe-commerce, php, ecommerce, hyva, luma
-- Components: 8 skills, 2 commands, 1 agent, 3 bash scripts. No hooks, no MCP servers, no network calls, no credentials.
-- What it writes: `CLAUDE.md` (marked block) and `.claude/rules/magento.md` on `/magekwik-magento:init`; PR comments only with `/magekwik-magento:review N --comment`.
+- Components (v1.0.1, as submitted): 8 skills, 2 commands, 1 agent, 3 bash scripts. No hooks, no MCP servers, no network
+  calls, no credentials. **From 1.1** `local-setup` adds 1 command, 1 agent and 3 scripts, downloads code, packages and
+  images through `git`, Composer and the environment tool, and generates local-only credentials into a git-ignored
+  `.magento-local.env` — the listing's data-handling answers must say so (see README "What it touches").
+- What it writes: `CLAUDE.md` (marked block) and `.claude/rules/magento.md` on `/magekwik-magento:init`; PR comments only with `/magekwik-magento:review N --comment`; from 1.1, `/magekwik-magento:local-setup` writes inside
+  its target directory only (plus empty `~/.composer` and `~/.ssh` for docker-magento).
 - Pre-submission check: `claude plugin validate ./plugins/magento --strict` → `✔ Validation passed`
   (run 2026-09-21, re-run 2026-09-29).
 
@@ -79,8 +83,10 @@ remote URL" (`MCP_FORWARDS_CREDENTIAL_ENV`):
 | `skills/quality/references/phpcs.md` (`_COOKIE`, `github.com`) | Line 118 — `$_COOKIE` listed in a table of PHPCS `Security` sniffs. |
 | `.claude-plugin/plugin.json` | The aggregate of the above ("reads TOKEN … and can send data off the machine"). |
 
-Nothing in the plugin reads a real credential or makes a network call, so the intended remedy
-(`${user_config.KEY}` with `sensitive: true`) does not apply; the holds want a reviewer's eyes, and
+Nothing in the plugin reads a real credential (and at v1.0.1 nothing made a network call), so the intended remedy
+(`${user_config.KEY}` with `sensitive: true`) does not apply. From 1.1, `local-setup` downloads through git, Composer
+and the environment tool and *generates* local credentials — still nothing the user supplies, so the same answer
+holds, but expect new holds on its prose (`DB_PASSWORD`, `ADMIN_PASSWORD` near URLs); the holds want a reviewer's eyes, and
 the form's own text says documentation-only occurrences need no change.
 
 Two warnings:

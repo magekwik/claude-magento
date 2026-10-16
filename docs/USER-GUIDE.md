@@ -215,7 +215,8 @@ What it does not do yet: audit a live store's performance or SEO, inspect cron h
 
 - `/magekwik-magento:init` writes `CLAUDE.md` (one marked block) and `.claude/rules/magento.md`. Nothing else.
 - `/magekwik-magento:review` writes nothing. It runs `git`, and `vendor/bin/phpcs` if present; `gh` only when you give it a PR number; PR comments only with `--comment`.
-- No hooks, no MCP servers, no network calls of its own, no credentials. Skills are Markdown; the three bash scripts are unit-tested and shellcheck-clean.
+- `/magekwik-magento:local-setup` writes only inside the target directory — the chosen tool's environment files, the code, `.magento-local.env` and its git-ignore entries — plus the empty `~/.composer` and `~/.ssh` directories docker-magento mounts; Warden, DDEV and Valet keep their own global config. Its network use is downloading code, packages and images through `git`, Composer and the environment tool. It generates local-only credentials, never asks for or connects to a live store, and never runs `sudo` or a global installer for you.
+- No hooks, no MCP servers. `init` and `review` make no network calls of their own; `local-setup` only downloads, as above. No credentials are read or sent anywhere. Skills are Markdown; the six bash scripts are unit-tested (including under macOS's bash 3.2) and shellcheck-clean.
 - Marker lines inside ``` fences in `CLAUDE.md` are ignored, so a fenced example of the markers is safe; an unbalanced fence can hide the live block.
 
 ---

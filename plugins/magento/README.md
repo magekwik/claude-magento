@@ -34,7 +34,8 @@ Skills load automatically when relevant; commands are explicit.
 
 - `/magekwik-magento:init` writes `CLAUDE.md` (a block between `<!-- magento:begin -->` / `<!-- magento:end -->`; marker lines inside ``` fences are ignored, so an unbalanced fence in CLAUDE.md can hide the live block) and `.claude/rules/magento.md`. Nothing else.
 - `/magekwik-magento:review` writes nothing. It runs `git`, and `vendor/bin/phpcs -q --standard=Magento2 --report=csv --basepath="$(git rev-parse --show-toplevel)"` if present. With a PR number it runs `gh`; with `--comment` it posts PR comments.
-- No hooks, no MCP servers, no network calls of its own, no credentials.
+- `/magekwik-magento:local-setup` writes only inside the target directory — the chosen tool's environment files, the code, `.magento-local.env` and its git-ignore entries — plus the empty `~/.composer` and `~/.ssh` directories docker-magento mounts; Warden, DDEV and Valet keep their own global config. Its network use is downloading code, packages and images through `git`, Composer and the environment tool. It generates local-only credentials, never asks for or connects to a live store, and never runs `sudo` or a global installer for you.
+- No hooks, no MCP servers. `init` and `review` make no network calls of their own; `local-setup` only downloads, as above. No credentials are read or sent anywhere.
 
 ## Requirements
 

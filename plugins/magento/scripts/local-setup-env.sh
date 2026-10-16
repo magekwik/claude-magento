@@ -37,7 +37,7 @@ ignore_file() {
     grep -qxF ".magento-local/" "$ex" 2>/dev/null || printf '%s\n' ".magento-local/" >> "$ex"
   fi
   if [ -f "$dir/.gitignore" ]; then
-    grep -qxF "$FILE" "$dir/.gitignore" || printf '\n# local setup ledger + credentials (magekwik-magento)\n%s\n.magento-local/\n' "$FILE" >> "$dir/.gitignore"
+    grep -qxF "$FILE" "$dir/.gitignore" || printf '\n# local setup ledger + credentials (/magekwik-magento:local-setup)\n%s\n.magento-local/\n' "$FILE" >> "$dir/.gitignore"
   fi
 }
 

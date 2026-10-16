@@ -109,7 +109,8 @@ Eleven eval scenarios (`evals/`) run against fixture projects; five of them fail
 
 - `/magekwik-magento:init` writes `CLAUDE.md` (one marked block) and `.claude/rules/magento.md`. Nothing else.
 - `/magekwik-magento:review` writes nothing; it runs `git` and `vendor/bin/phpcs`, `gh` only with a PR number, and posts comments only with `--comment`.
-- No hooks, no MCP servers, no network calls of its own, no credentials.
+- `/magekwik-magento:local-setup` writes only inside the target directory — the chosen tool's environment files, the code, `.magento-local.env` and its git-ignore entries — plus the empty `~/.composer` and `~/.ssh` directories docker-magento mounts; Warden, DDEV and Valet keep their own global config. Its network use is downloading code, packages and images through `git`, Composer and the environment tool. It generates local-only credentials, never asks for or connects to a live store, and never runs `sudo` or a global installer for you.
+- No hooks, no MCP servers. `init` and `review` make no network calls of their own; `local-setup` only downloads, as above. No credentials are read or sent anywhere.
 
 ---
 
