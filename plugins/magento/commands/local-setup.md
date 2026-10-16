@@ -1,7 +1,7 @@
 ---
 name: local-setup
 description: Guided, resumable local Magento environment setup — Warden, DDEV, docker-magento or Valet on macOS, Linux, WSL2 or Windows; new Magento Open Source / Mage-OS install or an existing git repo. Step-wise with a git-ignored .magento-local.env ledger that ends up holding every local credential. Never touches a live database. User-invoked only.
-argument-hint: "[--dir <path>] [--env warden|ddev|docker-magento|valet] [--repo <git-url>] [--new] [--status] [--reset]"
+argument-hint: "[--dir <path>] [--env warden|ddev|docker-magento|valet] [--repo <git-url>] [--new [--distro magento|mage-os]] [--status] [--reset]"
 disable-model-invocation: true
 ---
 
@@ -12,7 +12,7 @@ You are setting up a **local** Magento 2 development environment for the user, o
 - **Nine steps, in order, each recorded in `.magento-local.env`** (via `local-setup-env.sh step N done|blocked`). On every invocation you resume at the first step that is not `done`. Never skip ahead; never re-run a `done` step unless `--reset`.
 - **Human intervention stops the run, cleanly.** When a step needs something only the user can do (install Docker, run a `sudo` command, add Composer keys, drop in a DB dump, open a new shell after an install), do everything you can, mark the step `blocked` with a note, print exactly what they must do, then end with: `Finish that, then re-run /magekwik-magento:local-setup to resume from step N.` Do not loop, poll, or wait.
 - **No live systems.** Never ask for, connect to, or read credentials of any staging/production database, host, API or admin. Every credential is generated locally into `.magento-local.env`. If the user wants real data, the only path is a sanitised dump they place at `.magento-local/db.sql` or `.sql.gz` themselves (step 7).
-- **Ask with the AskUserQuestion tool** when it is available; otherwise ask in plain text and stop until answered. Ask only what the ledger does not already answer. Arguments (`$ARGUMENTS`) pre-answer questions: `--dir`, `--env`, `--repo`, `--new`.
+- **Ask with the AskUserQuestion tool** when it is available; otherwise ask in plain text and stop until answered. Ask only what the ledger does not already answer. Arguments (`$ARGUMENTS`) pre-answer questions: `--dir`, `--env`, `--repo`, `--new`, `--distro`.
 - **Prefix every Magento/Composer command for the chosen environment** (`$MAGE` below). The table and per-tool details are in `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` — read it once at step 5. In non-TTY runs add `-T` for Warden and Compose.
 - **Write nothing outside the target directory** except the tool's own global config (`~/.warden`, `~/.ddev`, Valet's config) which the tools write themselves, and the empty `~/.composer` and `~/.ssh` directories docker-magento mounts.
 - Keep output short: one line per action, no narration of what you are about to do.
@@ -44,7 +44,7 @@ If the user names another path: create it (`mkdir -p`), re-run DETECT on it, and
 
 ## 2. Source of the code
 
-Skip the question when `--repo`/`--new` was given or `DETECT.dir.magento_root` is true (existing code → `SETUP_SOURCE=existing`). Otherwise ask:
+Skip the question when `--repo`/`--new` was given or `DETECT.dir.magento_root` is true (existing code → `SETUP_SOURCE=existing`). `--new` alone means Magento Open Source; `--new --distro mage-os` means Mage-OS (`--distro` without `--new` implies it). Otherwise ask:
 
 - **Existing repository** → ask for the git URL (and optional branch). Validate shape only (`git ls-remote` is allowed and is not a live store). Set `SETUP_SOURCE=repo`, `SETUP_GIT_URL`, `SETUP_GIT_BRANCH`.
 - **New install, latest Magento Open Source** → set `SETUP_SOURCE=new`, `SETUP_DISTRO=magento`, `SETUP_MAGENTO_VERSION=latest`. Note: this needs Adobe Marketplace keys (`auth.json`) — checked in step 6.
