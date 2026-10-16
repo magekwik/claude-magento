@@ -1,7 +1,7 @@
 ---
 name: local-setup
 description: Guided, resumable local Magento environment setup — Warden, DDEV, docker-magento or Valet on macOS, Linux, WSL2 or Windows; new Magento Open Source / Mage-OS install or an existing git repo. Step-wise with a git-ignored .magento-local.env ledger that ends up holding every local credential. Never touches a live database. User-invoked only.
-argument-hint: "[--dir <path>] [--env warden|ddev|docker-magento|valet] [--repo <git-url>] [--new [--distro magento|mage-os]] [--status] [--reset]"
+argument-hint: "[--dir <path>] [--env warden|ddev|docker-magento|valet] [--repo <git-url>] [--new [--distro magento|mage-os]] [--db-dump <path>] [--media <path>] [--status] [--reset]"
 disable-model-invocation: true
 ---
 
@@ -12,7 +12,7 @@ You are setting up a **local** Magento 2 development environment for the user, o
 - **Nine steps, in order, each recorded in `.magento-local.env`** (via `local-setup-env.sh step N done|blocked`). On every invocation you resume at the first step that is not `done`. Never skip ahead; never re-run a `done` step unless `--reset`.
 - **Human intervention stops the run, cleanly.** When a step needs something only the user can do (install Docker, run a `sudo` command, add Composer keys, drop in a DB dump, open a new shell after an install), do everything you can, mark the step `blocked` with a note, print exactly what they must do, then end with: `Finish that, then re-run /magekwik-magento:local-setup to resume from step N.` Do not loop, poll, or wait.
 - **No live systems.** Never ask for, connect to, or read credentials of any staging/production database, host, API or admin. Every credential is generated locally into `.magento-local.env`. If the user wants real data, the only path is a sanitised dump they place at `.magento-local/db.sql` or `.sql.gz` themselves (step 7).
-- **Ask with the AskUserQuestion tool** when it is available; otherwise ask in plain text and stop until answered. Ask only what the ledger does not already answer. Arguments (`$ARGUMENTS`) pre-answer questions: `--dir`, `--env`, `--repo`, `--new`, `--distro`.
+- **Ask with the AskUserQuestion tool** when it is available; otherwise ask in plain text and stop until answered. Ask only what the ledger does not already answer. Arguments (`$ARGUMENTS`) pre-answer questions: `--dir`, `--env`, `--repo`, `--new`, `--distro`, `--db-dump`, `--media` (the last two set `DB_DUMP` / `MEDIA_ARCHIVE` in LEDGER, as paths under `.magento-local/`).
 - **Prefix every Magento/Composer command for the chosen environment** (`$MAGE` below). The table and per-tool details are in `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` — read it once at step 5. In non-TTY runs add `-T` for Warden and Compose. `$MAGE` is notation, not a shell variable: write the prefix out, or define a function (`M() { warden env exec -T php-fpm bin/magento "$@"; }`) — zsh does not word-split an unquoted variable, so `$M bin/magento` fails there.
 - **Write nothing outside the target directory** except the tool's own global config (`~/.warden`, `~/.ddev`, Valet's config) which the tools write themselves, and the empty `~/.composer` and `~/.ssh` directories docker-magento mounts.
 - Keep output short: one line per action, no narration of what you are about to do.
@@ -40,6 +40,8 @@ Decide where the environment lives. Cases, from DETECT:
 | not empty, not a Magento root | "This directory isn't empty. Use it anyway (code goes in a subfolder you name), or give another path?" |
 | empty or missing | use it, no question |
 
+An explicit `--dir` answers the question: set up **here**, in that directory, keeping what is there (existing code → `SETUP_SOURCE=existing`; anything else stays alongside, and for `--repo` the clone in step 5 lands on top). Files the command itself created — `.magento-local.env` and `.magento-local/` — never make a directory count as non-empty.
+
 If the user names another path: create it (`mkdir -p`), re-run DETECT on it, and from now on DIR is that path. Run `local-setup-env.sh init DIR SETUP_OS=<DETECT.os> SETUP_DIR=<abs path>` (PROJECT_NAME = the directory's basename, lower-cased, non-alphanumerics → `-`; pass it as `PROJECT_NAME=…`). Tell the user the ledger was created and git-ignored, and that they may edit any value before the step that uses it. Mark step 1 `done`.
 
 ## 2. Source of the code
@@ -50,7 +52,9 @@ Skip the question when `--repo`/`--new` was given or `DETECT.dir.magento_root` i
 - **New install, latest Magento Open Source** → set `SETUP_SOURCE=new`, `SETUP_DISTRO=magento`, `SETUP_MAGENTO_VERSION=latest`. Note: this needs Adobe Marketplace keys (`auth.json`) — checked in step 6.
 - **New install, latest Mage-OS** (community fork, no keys needed) → `SETUP_DISTRO=mage-os`.
 
-For `repo`/`existing`, set `PHP_VERSION` from the repo's `composer.json` `require.php` / `config.platform.php` once the code is present (step 6); for `new`, 8.4 is the default. Mark step 2 `done`.
+For `repo`/`existing`, set `PHP_VERSION` from the repo's `composer.json` `require.php` / `config.platform.php` once the code is present (step 6); for `new`, 8.4 is the default.
+
+**Data, for `repo`/`existing` only** (a new install starts empty): unless `--db-dump` was given or `DB_DUMP` is already set, ask once — "Fresh install, or import a sanitised database dump you'll place locally?" Import → `DB_DUMP=.magento-local/db.sql.gz`, and if they also have media, `MEDIA_ARCHIVE=.magento-local/media.tar.gz`. Never ask for the dump's contents, a server or credentials in chat; the files arrive at step 7. Mark step 2 `done`.
 
 ## 3. Environment tool
 
@@ -83,7 +87,7 @@ When something is missing that the user can install without root (e.g. Composer 
 
 Read `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` now. Work in DIR. Values come from LEDGER (`get`).
 
-**First, for `SETUP_SOURCE=repo` only:** if CODE (DIR, or `DIR/src` for docker-magento) has no `composer.json`, clone now — `git clone [--branch <SETUP_GIT_BRANCH>] <SETUP_GIT_URL> <CODE>` (DIR non-empty because of the ledger only → clone into `_clone`, then `shopt -s dotglob; mv _clone/* .; rmdir _clone`). Scaffolding then lands on top of the repo, and the repo's own `.gitignore`/env files are respected. Clone failure (auth, wrong URL) → **blocked** with the git error. Then:
+**First, for `SETUP_SOURCE=repo` only:** if CODE (DIR, or `DIR/src` for docker-magento) has no `composer.json`, clone now — `git clone [--branch <SETUP_GIT_BRANCH>] <SETUP_GIT_URL> <CODE>` (DIR holding only the ledger and `.magento-local/` → clone into `_clone`, then `shopt -s dotglob; mv _clone/* .; rmdir _clone` — this is on the host, before any container mounts exist, so `mv` is safe here). Scaffolding then lands on top of the repo, and the repo's own `.gitignore`/env files are respected. Clone failure (auth, wrong URL) → **blocked** with the git error. Then:
 
 **warden**
 1. `warden env-init <PROJECT_NAME> magento2` (skip if `.env` with `WARDEN_ENV_TYPE` exists). Edit `.env`: `TRAEFIK_DOMAIN=<DOMAIN>` (Warden wants domain + subdomain: set `TRAEFIK_DOMAIN` to the part after the first dot and `TRAEFIK_SUBDOMAIN` to the part before — `app.magento.test` → `magento.test` / `app`; a bare `magento.test` → `TRAEFIK_DOMAIN=magento.test`, `TRAEFIK_SUBDOMAIN=app`, and set `DOMAIN=app.magento.test` + `BASE_URL` in LEDGER), `PHP_VERSION`, `MYSQL_DISTRIBUTION`/`_VERSION` from `DB_DISTRIBUTION*`, `WARDEN_OPENSEARCH=1`, `WARDEN_REDIS=1`, `WARDEN_VARNISH=0`, `WARDEN_RABBITMQ=0`, `MYSQL_DATABASE=<DB_NAME> MYSQL_USER=<DB_USER> MYSQL_PASSWORD=<DB_PASSWORD> MYSQL_ROOT_PASSWORD=<DB_ROOT_PASSWORD>` (add the keys if absent).
@@ -121,9 +125,11 @@ After install: `local-setup-env.sh ignore DIR` again (the new repo now has a `.g
 
 ## 7. Database
 
-Never connect anywhere outside the environment. Two paths:
+Never connect anywhere outside the environment. Two paths.
 
-**A. Import a dump** — only if `DB_DUMP` in LEDGER names an existing file (user placed it under `.magento-local/`). Tell the user before importing that it must be sanitised (no customer PII, no production keys). Import: Warden `warden db import < file` (gunzip first if `.gz`), DDEV `ddev import-db --file=<file>`, docker-magento `bin/mysql < file`, Valet `mysql -u<DB_USER> -p<DB_PASSWORD> <DB_NAME> < file`. Then write `app/etc/env.php` (if missing, `$MAGE bin/magento setup:config:set` with LEDGER values: `--db-host --db-name --db-user --db-password --backend-frontname=<ADMIN_URI> --key=<CRYPT_KEY>` — note: a dump with encrypted config needs the original `crypt/key`; say so and set `CRYPT_KEY` to what the user provides in LEDGER, never in chat), then `$MAGE bin/magento setup:upgrade`.
+**Before either:** if `DB_DUMP` or `MEDIA_ARCHIVE` is set but its file is not there yet → **blocked**, listing: where to put each file (`.magento-local/` in DIR); that the dump must be sanitised (no customer PII, no production keys); and that if the source store keeps encrypted config, they must set `CRYPT_KEY` in `.magento-local.env` to that store's `crypt/key` from its `app/etc/env.php` — by editing the file, never by pasting it into the chat. To switch back to a fresh install they clear `DB_DUMP`. On resume, re-check the files before importing.
+
+**A. Import a dump** — only if `DB_DUMP` in LEDGER names an existing file (user placed it under `.magento-local/`). Tell the user before importing that it must be sanitised (no customer PII, no production keys). Import: Warden `warden db import < file` (gunzip first if `.gz`), DDEV `ddev import-db --file=<file>`, docker-magento `bin/mysql < file`, Valet `mysql -u<DB_USER> -p<DB_PASSWORD> <DB_NAME> < file`. Then write `app/etc/env.php` (if missing, `$MAGE bin/magento setup:config:set` with LEDGER values: `--db-host --db-name --db-user --db-password --backend-frontname=<ADMIN_URI> --key=<CRYPT_KEY>` — `CRYPT_KEY` is whatever the user left in LEDGER), then `$MAGE bin/magento setup:upgrade`.
 
 **B. Fresh install** (default):
 ```
