@@ -89,6 +89,12 @@ for sh in $shells; do
   assert_contains "$t/a/.magento-local.env" "^LAST_NOTE=\[step 2 blocked\] install ddev$" "$sh F note recorded"
   for n in 2 3 4 5 6 7 8 9; do $sh "$S" step "$t/a" "$n" "done"; done
   assert_eq "$($sh "$S" next "$t/a")" "10" "$sh F all done"
+  $sh "$S" status "$t/a" > /dev/null; assert_eq "$?" "0" "$sh F status exits 0 with no note"
+  # a repo that already has a committed .gitignore: exclude only, the .gitignore is left untouched
+  mkdir "$t/f2" && git -C "$t/f2" init -q && printf '/vendor/\n' > "$t/f2/.gitignore"
+  $sh "$S" init "$t/f2" > /dev/null
+  assert_eq "$(cat "$t/f2/.gitignore")" "/vendor/" "$sh F2 committed .gitignore untouched in a repo"
+  git -C "$t/f2" check-ignore -q .magento-local.env; assert_eq "$?" "0" "$sh F2 ledger still ignored via exclude"
 
   # G. set/get round-trips sed-special characters
   $sh "$S" set "$t/a" DB_PASSWORD 'a|b&c$d\e/f'
