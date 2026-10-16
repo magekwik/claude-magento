@@ -155,6 +155,15 @@ for sh in $shells; do
   assert_eq "$(json_get "$t/i.json" tools.ddev)" "installed (version unknown)" "$sh I silent tool still detected"
   assert_eq "$(json_get "$t/i.json" tools.docker_compose)" "null" "$sh I docker without compose plugin"
   assert_eq "$(json_get "$t/i.json" recommend)" "warden" "$sh I installed warden recommended"
+  # Valet 4 sudo-wraps `valet --version`: detection must read cli/app.php and never run valet
+  printf '#!/bin/sh\ntouch "%s/valet-ran"; exit 1\n' "$t" > "$stub/valet"; chmod +x "$stub/valet"
+  mkdir -p "$t/ch/vendor/laravel/valet/cli" && printf "<?php\n\$version = '4.12.0';\n" > "$t/ch/vendor/laravel/valet/cli/app.php"
+  COMPOSER_HOME="$t/ch" PATH="$stub:$PATH" $sh "$D" "$t/h" > "$t/v.json" 2>/dev/null
+  assert_eq "$(json_get "$t/v.json" tools.valet)" "Laravel Valet 4.12.0" "$sh I valet version read from app.php"
+  assert_eq "$([ -e "$t/valet-ran" ] && echo ran || echo not-run)" "not-run" "$sh I valet itself never run"
+  rm -rf "$t/ch"; HOME="$t/nohome" COMPOSER_HOME="" PATH="$stub:$PATH" $sh "$D" "$t/h" > "$t/v2.json" 2>/dev/null
+  assert_eq "$(json_get "$t/v2.json" tools.valet)" "installed (version unknown)" "$sh I valet without app.php still detected"
+  rm -f "$stub/valet" "$t/valet-ran"
 done
 
 rm -rf "$tmp"

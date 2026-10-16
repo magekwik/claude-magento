@@ -45,7 +45,19 @@ docker_running=false
 if [ -n "$t_docker" ] && docker info >/dev/null 2>&1; then docker_running=true; fi
 t_warden="$(ver warden version)"   # warden has no --version flag ("Unsupported flag"); `warden version` prints e.g. 0.15.0
 t_ddev="$(ver ddev --version)"
-t_valet="$(ver valet --version)"
+valet_ver() { # Valet 4 re-runs nearly every command under sudo, `--version` included, so never run it here: read cli/app.php
+  command -v valet >/dev/null 2>&1 || return 0
+  local h f
+  for h in "${COMPOSER_HOME:-}" "$HOME/.composer" "$HOME/.config/composer"; do
+    f="$h/vendor/laravel/valet/cli/app.php"
+    if [ -n "$h" ] && [ -f "$f" ]; then
+      f="$(sed -n "s/^\$version = '\(.*\)';.*/\1/p" "$f" | head -1)"
+      if [ -n "$f" ]; then printf 'Laravel Valet %s' "$f"; return 0; fi
+    fi
+  done
+  printf 'installed (version unknown)'
+}
+t_valet="$(valet_ver)"
 t_php="$(ver php --version)"
 php_version=""
 if command -v php >/dev/null 2>&1; then php_version="$(php -r 'echo PHP_VERSION;' 2>/dev/null || true)"; fi
