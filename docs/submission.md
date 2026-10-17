@@ -41,7 +41,7 @@ The review pipeline runs `claude plugin validate` plus automated safety screenin
 
 - Plugin name (slug): `magekwik-magento`
 - Display name: Magekwik Magento Toolkit
-- Description: Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magekwik-magento:init) and Magento-aware code review (/magekwik-magento:review).
+- Description: Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magekwik-magento:init), Magento-aware code review (/magekwik-magento:review) and guided local environment setup (/magekwik-magento:local-setup).
 - Category: development
 - Author: Magekwik — https://magekwik.com
 - Homepage / repository: https://github.com/magekwik/claude-magento (public)
@@ -55,7 +55,7 @@ The review pipeline runs `claude plugin validate` plus automated safety screenin
 - License: MIT
 - Keywords: magento, magento2, adobe-commerce, php, ecommerce, hyva, luma
 - Components (v1.0.1, as submitted): 8 skills, 2 commands, 1 agent, 3 bash scripts. No hooks, no MCP servers, no network
-  calls, no credentials. **From 1.1** `local-setup` adds 1 command, 1 agent and 3 scripts, downloads code, packages and
+  calls, no credentials. **From 1.1.1** `local-setup` adds 1 command, 1 agent and 5 scripts, downloads code, packages and
   images through `git`, Composer and the environment tool, and generates local-only credentials into a git-ignored
   `.magento-local.env` — the listing's data-handling answers must say so (see README "What it touches").
 - What it writes: `CLAUDE.md` (marked block) and `.claude/rules/magento.md` on `/magekwik-magento:init`; PR comments only with `/magekwik-magento:review N --comment`; from 1.1, `/magekwik-magento:local-setup` writes inside

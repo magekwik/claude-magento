@@ -19,6 +19,7 @@ Once accepted into the community marketplace: `/plugin marketplace add anthropic
 |---|---|
 | `/magekwik-magento:init` | Detects edition/version, PHP, custom modules, themes (Luma/Hyvä), dev environment (Warden/DDEV/Docker/native) and tooling; writes a marked block into `CLAUDE.md` and a rules file into `.claude/rules/magento.md`. Re-run any time — it only touches its own block, and leaves the rules file alone once you edit its header away. |
 | `/magekwik-magento:review [branch\|PR] [--comment]` | Reviews your working tree (default), a branch diff, or a GitHub PR for Magento-specific defects — DI misuse, raw SQL, missing ACL/CSRF, plugin/observer misuse, layout and Luma/Hyvä mistakes — plus PHPCS Magento2 results when available. Findings are ranked with file:line, rule, why and fix. `--comment` posts them inline on the PR via `gh`. |
+| `/magekwik-magento:local-setup [--dir] [--env] [--repo] [--new] …` | Sets up a running local store — Warden, DDEV, docker-magento or Valet; new Magento Open Source / Mage-OS or your repo; optional sanitised dump and media import — in nine resumable steps. Choices and generated credentials live in a git-ignored `.magento-local.env`; when it needs you (install a tool, one `sudo`, Marketplace keys) it stops with exact instructions and resumes where it left off. A read-only agent verifies the result. |
 | `magekwik-magento:conventions` | The rulebook (A1–Q6) the reviewer and `init` use. |
 | `magekwik-magento:module` | Modules, di.xml, plugins vs observers, cron, CLI, admin controllers. |
 | `magekwik-magento:data` | db_schema.xml, patches, service contracts, EAV, extension attributes. |
@@ -39,7 +40,7 @@ Skills load automatically when relevant; commands are explicit.
 
 ## Requirements
 
-Claude Code 2.1+ · `git` · `bash` · optional: `gh` (PR review), `vendor/bin/phpcs` with `magento/magento-coding-standard` (PHPCS findings).
+Claude Code 2.1+ · `git` · `bash` · optional: `gh` (PR review), `vendor/bin/phpcs` with `magento/magento-coding-standard` (PHPCS findings). `local-setup` needs the environment tool you choose (it tells you how to install it).
 
 ## Development
 

@@ -1,12 +1,13 @@
 # magekwik-magento — user guide
 
-The `magento` plugin makes Claude Code a competent Magento Open Source 2.4 developer. It ships three kinds of things:
+The `magekwik-magento` plugin makes Claude Code a competent Magento Open Source 2.4 developer. It ships these:
 
 | | What it is | How you use it |
 |---|---|---|
 | **8 skills** | Reference knowledge Claude loads on its own when a task touches that area | Just ask — "add an observer for order placement", "why is `setup:upgrade` slow?" |
 | **`/magekwik-magento:init`** | Sets a project up so Claude behaves consistently in it | Run once per project, re-run after big changes |
 | **`/magekwik-magento:review`** | A read-only Magento-aware code review of a diff, branch or PR | Run before you open a PR, or on someone else's |
+| **`/magekwik-magento:local-setup`** | A guided, resumable setup of a running local store | Run once per local copy; re-run to resume |
 
 Supported: **Magento Open Source 2.4.4 – 2.4.9 · PHP 8.1 – 8.5 · Luma and Hyvä**. Adobe Commerce-only features are referenced, not covered in depth.
 
@@ -16,7 +17,7 @@ Supported: **Magento Open Source 2.4.4 – 2.4.9 · PHP 8.1 – 8.5 · Luma and 
 
 **Developers and agencies working on Magento 2** — the plugin is built for people writing modules, themes, APIs and deployment scripts. It gives Claude the framework's conventions (so it stops reaching for `ObjectManager`, raw SQL or `InstallSchema`), the version-specific facts (what changed in 2.4.9's cache backend, which PHP each release needs), and a reviewer that reads a diff the way a senior Magento engineer would.
 
-**Store owners and merchants** get the benefit indirectly today: better code from whoever works on the store, a review gate that catches the classic security and upgrade-breaking mistakes, and a repository that any developer (or Claude session) can pick up with the right context already in place. The plugin does not yet talk to a running store — see [Roadmap](#11-roadmap) for what is coming.
+**Store owners and merchants** get the benefit indirectly today: better code from whoever works on the store, a review gate that catches the classic security and upgrade-breaking mistakes, and a repository that any developer (or Claude session) can pick up with the right context already in place. The plugin does not yet talk to a running store — see [Roadmap](#12-roadmap) for what is coming.
 
 ---
 
@@ -162,7 +163,40 @@ The reviewer never edits files. With `--comment`, it only ever writes PR comment
 
 ---
 
-## 6. Worked examples
+## 6. `/magekwik-magento:local-setup`
+
+Sets up a running local Magento store, one step at a time, and remembers where it got to.
+
+```
+/magekwik-magento:local-setup                                    # asks what it needs
+/magekwik-magento:local-setup --dir ~/sites/shop --env warden --new --distro mage-os
+/magekwik-magento:local-setup --repo git@github.com:acme/shop.git --db-dump .magento-local/db.sql.gz --media .magento-local/media.tar.gz
+/magekwik-magento:local-setup --status                           # progress so far
+/magekwik-magento:local-setup --reset                            # start again (deletes only the ledger)
+```
+
+**What it asks.** Where to set up; from what — your git repository, the latest Magento Open Source (needs Marketplace keys) or Mage-OS (needs none); for a repository, whether to install fresh or import a sanitised dump; and which tool — Warden, DDEV, docker-magento or Valet, recommended from what is installed. Arguments answer the questions ahead of time.
+
+**The ledger.** Everything it decides and every credential it generates goes into `.magento-local.env` in the target folder — git-ignored (`.git/info/exclude` in a repository, so your committed `.gitignore` is never edited), readable only by you, and created before anything else so you can change a value before the step that uses it. Keep it: it is the only copy of the local passwords.
+
+**When it needs you, it stops.** Installing a tool, a `sudo` command (Warden's certificate, docker-magento's `/etc/hosts` line and TLS, `valet trust`), Marketplace keys, or a dump or media archive that is not there yet: the step is marked blocked, you get the exact commands, and re-running the command resumes at that step. It never runs `sudo` or a global installer itself, never asks you to paste keys into the chat, and never connects to a live store — real data only comes from a sanitised dump you place under `.magento-local/`.
+
+**Secrets stay out of the chat.** The hand-over shows URLs and user names and points to `.magento-local.env` for the passwords; commands read secrets from that file when they run, so they never appear in Claude's messages or commands.
+
+**Per tool:**
+
+| Tool | Notes |
+|---|---|
+| Warden | Uses Warden's shared router on 80/443 and `*.test` DNS; signs a certificate (`sudo` on first use). |
+| DDEV | Moves to free ports (e.g. 8080/8443) when 80/443 are taken, in `.ddev/config.local.yaml`; copies your `~/.composer/auth.json` in for Magento installs. |
+| docker-magento | Copies markshust's template (no `curl \| bash`), follows its own install flow, moves busy ports in `compose.override.yaml`; you run `bin/setup-ssl-ca` and `bin/setup-ssl` for a trusted certificate. |
+| Valet (macOS) | Needs Homebrew PHP, a database Magento supports (`mariadb@11.8` or `mysql@8.4` — Homebrew's latest `mariadb` is usually too new), OpenSearch, and `valet trust` so `valet` runs without a password. The database version is checked before installing. |
+
+**At the end** a read-only agent checks services, database, search, indexers, storefront and admin, 2FA, git-ignores, cron and media, and prints a PASS/FAIL table. Then run `/magekwik-magento:init` in the new project.
+
+---
+
+## 7. Worked examples
 
 These are the plugin's own evaluation scenarios — each is run against a fixture project before every release. Where a scenario "flipped" (failed without the plugin, passed with it), that is where the plugin adds the most.
 
@@ -186,7 +220,7 @@ both lines reported with exact numbers, a blocker on the SQL, S2 as major, and �
 
 ---
 
-## 7. What it does for developers
+## 8. What it does for developers
 
 - **Guardrails you do not have to remember.** The rulebook is loaded in every review and copied into every project; the mistakes that cost upgrades (core-table columns, install scripts, `vendor/` edits) and security (raw SQL, GET mutations, unescaped output) get caught before a PR.
 - **Version-accurate answers.** Facts are checked against the 2.4.9 source, not recalled: which cache type holds plugin lists (`compiled_config`), what `cache:flush` does on 2.4.9 versus 2.4.8, that cron groups are silently never scheduled without `cron_groups.xml`, that `setup:di:compile` in developer mode leaves you in compiled mode.
@@ -198,7 +232,7 @@ Honest limits: it is Markdown and bash, not a runtime. It does not execute your 
 
 ---
 
-## 8. What it does for merchants and store owners
+## 9. What it does for merchants and store owners
 
 Today, indirectly but concretely:
 
@@ -211,17 +245,17 @@ What it does not do yet: audit a live store's performance or SEO, inspect cron h
 
 ---
 
-## 9. Safety and what it touches
+## 10. Safety and what it touches
 
 - `/magekwik-magento:init` writes `CLAUDE.md` (one marked block) and `.claude/rules/magento.md`. Nothing else.
 - `/magekwik-magento:review` writes nothing. It runs `git`, and `vendor/bin/phpcs` if present; `gh` only when you give it a PR number; PR comments only with `--comment`.
 - `/magekwik-magento:local-setup` writes only inside the target directory — the chosen tool's environment files, the code, `.magento-local.env` and its git-ignore entries — plus the empty `~/.composer` and `~/.ssh` directories docker-magento mounts; Warden, DDEV and Valet keep their own global config. Its network use is downloading code, packages and images through `git`, Composer and the environment tool. It generates local-only credentials, never asks for or connects to a live store, and never runs `sudo` or a global installer for you.
-- No hooks, no MCP servers. `init` and `review` make no network calls of their own; `local-setup` only downloads, as above. No credentials are read or sent anywhere. Skills are Markdown; the six bash scripts are unit-tested (including under macOS's bash 3.2) and shellcheck-clean.
+- No hooks, no MCP servers. `init` and `review` make no network calls of their own; `local-setup` only downloads, as above. No credentials are read or sent anywhere. Skills are Markdown; the eight bash scripts are unit-tested (including under macOS's bash 3.2) and shellcheck-clean.
 - Marker lines inside ``` fences in `CLAUDE.md` are ignored, so a fenced example of the markers is safe; an unbalanced fence can hide the live block.
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Symptom | Cause / fix |
 |---|---|
@@ -232,19 +266,23 @@ What it does not do yet: audit a live store's performance or SEO, inspect cron h
 | Hyvä store treated as Luma | The theme's parent must start with `Hyva/` or `hyva-themes/*` must be in `composer.lock`. |
 | Rules file not updating | Its first line no longer starts with `<!-- generated by the magento plugin` — you own it now. Delete the file to regenerate. |
 | Private-repo install fails | Use the SSH URL form of `/plugin marketplace add` from a machine with access. |
+| `local-setup` stops at a step | That is by design: do what the printed block says, then run `/magekwik-magento:local-setup` again. `--status` shows where it is and the last note. |
+| Valet keeps asking for a password | Run `valet trust`, and make sure `which valet` is Homebrew's (`~/.composer/vendor/bin` must come after Homebrew's `bin` in `PATH`). |
+| Valet install refused: database version | Install a supported version (`mariadb@11.8`); the blocked message gives the exact commands. |
+| Search indexing fails with `index create block` | The disk is over 90% full and OpenSearch stops creating indexes. Free disk space. |
 
 ---
 
-## 11. Roadmap
+## 12. Roadmap
 
-- **1.0** (this release): the eight skills, `/magekwik-magento:init`, `/magekwik-magento:review`, the reviewer agent, evals and CI.
-- **1.1 — local setup:** `/magekwik-magento:local-setup`, a guided, resumable local environment on Warden, DDEV, docker-magento or Valet, for a new Magento Open Source / Mage-OS install or an existing repository.
+- **1.0:** the eight skills, `/magekwik-magento:init`, `/magekwik-magento:review`, the reviewer agent, evals and CI.
+- **1.1 — local setup** (1.1.1, this release): `/magekwik-magento:local-setup`, a guided, resumable local environment on Warden, DDEV, docker-magento or Valet, for a new Magento Open Source / Mage-OS install or an existing repository.
 - **1.2 — audit suite:** `/magekwik-magento:audit` with performance, SEO, patch-detector and cron-inspector agents producing one report format, working from code and config (no live store access).
 - **2.0 — store operations:** an MCP server for live data — cron schedule, indexers, real performance and reporting — so merchants can ask about the running store, not just the code.
 
 ---
 
-## 12. Versions and contributing
+## 13. Versions and contributing
 
 Releases are tagged `vX.Y.Z`; `/plugin marketplace update magekwik` installs the latest. Every release runs the structural checks (manifests, shellcheck, unit tests), the eval scenarios, and hands-on checks against a real store and a fresh 2.4.9 install — see `docs/release-checklist.md`.
 

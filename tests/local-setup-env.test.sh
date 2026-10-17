@@ -111,6 +111,7 @@ for sh in $shells; do
   assert_contains "$t/a/.env" "^TRAEFIK_DOMAIN=app.a.test$" "$sh G literal value set (last line had no newline)"
   assert_contains "$t/a/.env" "^WARDEN_ENV_TYPE=magento2$" "$sh G other lines kept"
   assert_eq "$(grep -c '^MYSQL_PASSWORD=' "$t/a/.env")" "1" "$sh G no duplicate key"
+  # shellcheck disable=SC2012  # ls -l is the portable way to read a mode (stat differs on BSD and GNU)
   assert_eq "$(ls -l "$t/a/.env" | cut -c1-10)" "-rw-r-----" "$sh G file mode kept"
   $sh "$S" write-env "$t/a" .env X=@NO_SUCH_KEY > /dev/null 2>&1; assert_eq "$?" "1" "$sh G unknown ledger key refused"
   $sh "$S" write-env "$t/a" .env "bad-name=1" > /dev/null 2>&1; assert_eq "$?" "1" "$sh G bad name refused"

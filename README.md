@@ -6,7 +6,7 @@ This repository is a Claude Code **plugin marketplace** (`magekwik`) containing 
 
 | Plugin | What it does |
 |---|---|
-| [`magekwik-magento`](plugins/magento/) | Makes Claude Code a competent Magento Open Source 2.4 developer: eight knowledge skills, `/magekwik-magento:init` to set a project up, `/magekwik-magento:review` for Magento-aware code review. |
+| [`magekwik-magento`](plugins/magento/) | Makes Claude Code a competent Magento Open Source 2.4 developer: eight knowledge skills, `/magekwik-magento:init` to set a project up, `/magekwik-magento:review` for Magento-aware code review, `/magekwik-magento:local-setup` for a working local store. |
 
 **Supports:** Magento Open Source 2.4.4 – 2.4.9 · PHP 8.1 – 8.5 · Luma and Hyvä frontends. Adobe Commerce-only features are referenced, not covered in depth.
 
@@ -70,6 +70,26 @@ Re-running only touches its own block. Delete the rules file's first line to tak
 <!-- magento:end -->
 ```
 
+### `/magekwik-magento:local-setup` — a working local store in nine resumable steps
+
+Takes you from an empty folder, a git URL or an existing checkout to a running Magento Open Source or Mage-OS store on **Warden, DDEV, docker-magento or Valet**. It asks only what it cannot detect — where, from what (your repo, the latest Magento Open Source, or Mage-OS), which tool, and for a repo whether to install fresh or import a dump — and recommends a tool from what is already installed.
+
+Every choice and every generated credential lives in one git-ignored file, `.magento-local.env`, created up front with values you can edit before the step that uses them. When a step needs *you* — install a tool, run one `sudo` command, add Marketplace keys, drop a sanitised dump at `.magento-local/db.sql.gz` or a media archive at `.magento-local/media.tar.gz` — it stops, says exactly what to do, and re-running `/magekwik-magento:local-setup` resumes at that step.
+
+| Step | Does |
+|---|---|
+| 1 Target | here or another folder; creates `.magento-local.env` and git-ignores it |
+| 2 Source | your repo, or a new Magento Open Source / Mage-OS install |
+| 3 Environment | Warden · DDEV · docker-magento · Valet; moves DDEV/docker-magento to free ports when 80/443 are taken |
+| 4 Prerequisites | checks the tools; prints the install steps and stops if something is missing |
+| 5 Scaffold | `warden env-init`, `ddev config`, the docker-magento template, or Valet's database; starts the services |
+| 6 Code | `git clone` + `composer install`, or `composer create-project` (Marketplace keys are checked, never asked for in chat) |
+| 7 Database | fresh `setup:install`, or an import of a dump *you* placed; optional media archive copied in |
+| 8 Configure | developer mode, base URLs, 2FA off, no cron, reindex |
+| 9 Verify | a read-only agent checks services, database, search, storefront, admin and git-ignores → PASS/FAIL table |
+
+At the end it prints the store and admin URLs, the admin and database users, the CLI prefix, and where the passwords are. It never prints a password or the encryption key: commands read them from `.magento-local.env` when they run. `--status` shows progress; `--reset` starts again (it deletes only the ledger).
+
 ### `/magekwik-magento:review [branch|PR] [--comment]` — a Magento-aware second reviewer
 
 A read-only subagent reads the rulebook, then the skills relevant to the touched files, then the diff. It runs PHPCS when available and reports in a fixed format you can post straight to a PR:
@@ -101,7 +121,9 @@ Beyond PHPCS: `ObjectManager` use; plugins on `final`/`private`/`static` methods
 
 Before each release the plugin is run against a production-shaped Warden store and a fresh `composer create-project` 2.4.9 install (see `docs/release-checklist.md`). In the 1.0.0 run, Claude scaffolded a module that served its page with HTTP 200 after `setup:upgrade`, exposed it over GraphQL behind a service contract, passed PHPCS on both, and the reviewer's findings on the result were all legitimate.
 
-Eleven eval scenarios (`evals/`) run against fixture projects; five of them fail without the plugin and pass with it — adding a column to a core table, the after-`db_schema.xml` command sequence, the reviewer on a planted bad controller, and both `init` runs.
+Thirteen eval scenarios (`evals/`) run against fixture projects; five of them fail without the plugin and pass with it — adding a column to a core table, the after-`db_schema.xml` command sequence, the reviewer on a planted bad controller, and both `init` runs.
+
+`/magekwik-magento:local-setup` was run end to end on macOS before 1.1.1 with every tool: Warden (new Magento Open Source and Mage-OS installs, an interrupted and resumed run, a repo clone with a dump and media import, existing code), DDEV on moved ports, docker-magento, and Valet with Homebrew MariaDB 11.8 — each ending with the verifier's checks passing. Linux, WSL2 and Windows follow the same steps but have not had a full run yet.
 
 ---
 
@@ -133,7 +155,7 @@ CI runs manifest validation, shellcheck, the unit tests, size limits and a conte
 
 ## Roadmap
 
-- **1.1 — local setup:** `/magekwik-magento:local-setup`, a guided, resumable local environment on Warden, DDEV, docker-magento or Valet.
+- **1.1 — local setup** (shipped in 1.1.1): `/magekwik-magento:local-setup`, a guided, resumable local environment on Warden, DDEV, docker-magento or Valet.
 - **1.2 — audit suite:** `/magekwik-magento:audit` with performance, SEO, patch-detector and cron-inspector agents working from code and config.
 - **2.0 — store operations:** an MCP server for live store data (cron, indexers, performance, reporting).
 

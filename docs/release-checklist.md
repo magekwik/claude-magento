@@ -17,6 +17,7 @@
 4b. Mage-OS: when Mage-OS ships a new major, refresh `evals/fixtures/mageos-skeleton/composer.lock` from a real resolve (no install, no services):
    `composer create-project --repository-url=https://repo.mage-os.org/ mage-os/project-community-edition ~/tmp/mos --no-install && cd ~/tmp/mos && composer update --no-install --ignore-platform-reqs --no-plugins`,
    then copy the `mage-os/framework` and `mage-os/product-community-edition` entries (name, version, two `require` lines, type, extra) into the fixture and update the versions in `tests/detect-project.test.sh` and `evals/scenarios/init-mageos/assert.sh`.
+4c. Local setup (when `local-setup` or its scripts changed): run `/magekwik-magento:local-setup` end to end with each tool the change touches, in a fresh folder under `~/tmp`, and check the verifier passes, nothing ran `sudo`, `curl | bash` or an install, and no password or `CRYPT_KEY` value appears in the transcript. Never stop other projects to free memory or ports without asking.
 5. Bump `plugins/magento/.claude-plugin/plugin.json` `version`; add the CHANGELOG entry; commit `chore: release vX.Y.Z`.
 6. `git tag vX.Y.Z && git push origin main --tags`; create the GitHub release from the tag with the CHANGELOG entry as body.
 7. In a Claude Code session: `/plugin marketplace update magekwik` then `/plugin install magekwik-magento@magekwik` → the new version installs and `/magekwik-magento:init` runs.
