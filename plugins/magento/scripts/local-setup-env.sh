@@ -39,8 +39,9 @@ admin_pw() { printf '%s%s%s' "$(rand 8)" "$(( RANDOM % 90 + 10 ))" "$(rand 4)"; 
 ignore_file() {
   # The ledger and its folder, Magento's own secrets once the code lands (CODE = DIR for every tool
   # but docker-magento, whose upstream .gitignore already ignores src/), and Warden's .env, which step 5
-  # fills with the generated database passwords. Ignoring never untracks a file git already tracks.
-  local lines=".magento-local.env .magento-local/ /auth.json /app/etc/env.php /.env" targets=() t l
+  # fills with the generated database passwords, plus the DDEV homeadditions copy of the user's Composer keys.
+  # Ignoring never untracks a file git already tracks.
+  local lines=".magento-local.env .magento-local/ /auth.json /.ddev/homeadditions/.composer/auth.json /app/etc/env.php /.env" targets=() t l
   if git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
     # --git-path is relative to $dir (not our cwd) and follows worktrees to the shared exclude file.
     ex="$(git -C "$dir" rev-parse --git-path info/exclude)"

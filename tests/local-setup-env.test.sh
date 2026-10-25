@@ -57,6 +57,7 @@ for sh in $shells; do
   # B2. not a repo: .gitignore is created, so a later `git init && git add -A` leaves the ledger out
   assert_contains "$t/b/.gitignore" "^\.magento-local\.env$" "$sh B2 .gitignore created outside a repo"
   assert_contains "$t/b/.gitignore" "^/auth\.json$" "$sh B2 auth.json ignored"
+  assert_contains "$t/b/.gitignore" "^/\.ddev/homeadditions/\.composer/auth\.json$" "$sh B2 DDEV homeadditions auth.json ignored"
   assert_contains "$t/b/.gitignore" "^/app/etc/env\.php$" "$sh B2 env.php ignored"
   assert_contains "$t/b/.gitignore" "^/\.env$" "$sh B2 Warden .env ignored"
   assert_contains "$t/a/.git/info/exclude" "^/\.env$" "$sh B2 Warden .env in repo exclude"
