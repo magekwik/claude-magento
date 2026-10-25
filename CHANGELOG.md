@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2 — 2026-10-25
+
+### Changed
+- `/magekwik-magento:local-setup` never reads, copies or moves `auth.json`: it only checks that the file exists. On DDEV, which does not mount `~/.composer`, the run stops and gives you the `cp` command to put a copy in the project yourself.
+- Commands that need a local password or `CRYPT_KEY` run through the new `local-setup-env.sh run <dir> -- <command>`, which fills `@{KEY}` from `.magento-local.env`, instead of inline shell reads of the ledger.
+
 ## 1.1.1 — 2026-10-17
 
 ### Added

@@ -188,7 +188,7 @@ Sets up a running local Magento store, one step at a time, and remembers where i
 | Tool | Notes |
 |---|---|
 | Warden | Uses Warden's shared router on 80/443 and `*.test` DNS; signs a certificate (`sudo` on first use). |
-| DDEV | Moves to free ports (e.g. 8080/8443) when 80/443 are taken, in `.ddev/config.local.yaml`; copies your `~/.composer/auth.json` in for Magento installs. |
+| DDEV | Moves to free ports (e.g. 8080/8443) when 80/443 are taken, in `.ddev/config.local.yaml`; for Magento installs, asks you to copy your `~/.composer/auth.json` into the project (DDEV does not mount `~/.composer`; the plugin never reads or copies the file itself). |
 | docker-magento | Copies markshust's template (no `curl \| bash`), follows its own install flow, moves busy ports in `compose.override.yaml`; you run `bin/setup-ssl-ca` and `bin/setup-ssl` for a trusted certificate. |
 | Valet (macOS) | Needs Homebrew PHP, a database Magento supports (`mariadb@11.8` or `mysql@8.4` — Homebrew's latest `mariadb` is usually too new), OpenSearch, and `valet trust` so `valet` runs without a password. The database version is checked before installing. |
 

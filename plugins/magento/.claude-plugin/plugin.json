@@ -1,7 +1,7 @@
 {
   "name": "magekwik-magento",
   "displayName": "Magekwik Magento Toolkit",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magekwik-magento:init), Magento-aware code review (/magekwik-magento:review) and guided local environment setup (/magekwik-magento:local-setup).",
   "author": {
     "name": "Magekwik",

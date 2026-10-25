@@ -57,7 +57,7 @@ The review pipeline runs `claude plugin validate` plus automated safety screenin
 - Components (v1.0.1, as submitted): 8 skills, 2 commands, 1 agent, 3 bash scripts. No hooks, no MCP servers, no network
   calls, no credentials. **From 1.1.1** `local-setup` adds 1 command, 1 agent and 5 scripts, downloads code, packages and
   images through `git`, Composer and the environment tool, and generates local-only credentials into a git-ignored
-  `.magento-local.env` — the listing's data-handling answers must say so (see README "What it touches").
+  `.magento-local.env`; **from 1.1.2** it never reads or copies the user's `auth.json` (existence check only) and passes local secrets to commands only through `local-setup-env.sh run` — the listing's data-handling answers must say so (see README "What it touches").
 - What it writes: `CLAUDE.md` (marked block) and `.claude/rules/magento.md` on `/magekwik-magento:init`; PR comments only with `/magekwik-magento:review N --comment`; from 1.1, `/magekwik-magento:local-setup` writes inside
   its target directory only (plus empty `~/.composer` and `~/.ssh` for docker-magento).
 - Pre-submission check: `claude plugin validate ./plugins/magento --strict` → `✔ Validation passed`
