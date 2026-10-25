@@ -18,6 +18,10 @@
 #                                                set NAME in a KEY=VALUE file (Warden .env, docker-magento env/*.env);
 #                                                @KEY copies the ledger's KEY, so secrets never pass through the chat.
 #                                                <file> is relative to <dir> unless absolute. Prints the names only.
+#   local-setup-env.sh run <dir> -- <command> <arg>…
+#                                                run <command> in the current directory with every @{KEY} inside an
+#                                                argument replaced by the ledger's KEY, so a secret reaches the command
+#                                                without being typed or read in the chat. Exits with the command's status.
 set -euo pipefail
 
 FILE=".magento-local.env"
@@ -229,5 +233,24 @@ EOF
     done
     echo "wrote:$names → $f"
     ;;
-  *) sed -n '2,20p' "$0"; exit 1 ;;
+  run)
+    [ "${1:-}" = "--" ] && shift
+    [ $# -ge 1 ] || { echo "usage: run <dir> -- <command> <arg>…" >&2; exit 1; }
+    [ -f "$path" ] || { echo "missing: $path" >&2; exit 1; }
+    args=()
+    for a in "$@"; do
+      out=""
+      while :; do
+        case "$a" in *'@{'*'}'*) ;; *) break ;; esac
+        out="$out${a%%@\{*}"; a="${a#*@\{}"
+        k="${a%%\}*}"; a="${a#*\}}"
+        case "$k" in ''|[0-9]*|*[!A-Za-z0-9_]*) echo "invalid ledger key: $k" >&2; exit 1 ;; esac
+        grep -q "^$k=" "$path" || { echo "no ledger key: $k" >&2; exit 1; }
+        out="$out$(get "$k")"
+      done
+      args+=("$out$a")
+    done
+    exec "${args[@]}"
+    ;;
+  *) sed -n '2,24p' "$0"; exit 1 ;;
 esac

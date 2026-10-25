@@ -118,6 +118,18 @@ for sh in $shells; do
   $sh "$S" write-env "$t/a" .env > /dev/null 2>&1; assert_eq "$?" "1" "$sh G no pairs refused"
   mkdir -p "$t/a/env"; $sh "$S" write-env "$t/a" env/db.env MYSQL_DATABASE=@DB_NAME > /dev/null
   assert_contains "$t/a/env/db.env" "^MYSQL_DATABASE=magento$" "$sh G new file in a subfolder"
+  # run: @{KEY} filled from the ledger inside any argument, nothing else touched, exit status kept
+  out="$($sh "$S" run "$t/a" -- printf '%s\n' "--db-password=@{DB_PASSWORD}" "IDENTIFIED BY '@{DB_PASSWORD}' @{DB_USER}@localhost" "admin@example.com" "@{" "a b")"
+  assert_eq "$(echo "$out" | sed -n 1p)" "--db-password=$pw" "$sh R1 key filled inside an argument"
+  assert_eq "$(echo "$out" | sed -n 2p)" "IDENTIFIED BY '$pw' magento@localhost" "$sh R1 several keys in one argument"
+  assert_eq "$(echo "$out" | sed -n 3p)/$(echo "$out" | sed -n 4p)/$(echo "$out" | sed -n 5p)" "admin@example.com/@{/a b" "$sh R1 other arguments unchanged"
+  assert_eq "$(cd "$t" && $sh "$S" run "$t/a" -- pwd)" "$t" "$sh R2 runs in the caller's directory"
+  assert_eq "$(echo in | $sh "$S" run "$t/a" -- env 'X=@{DB_NAME}' sh -c 'cat; echo "$X"' | tr '\n' ' ')" "in magento " "$sh R3 stdin passes, env form works"
+  $sh "$S" run "$t/a" -- sh -c 'exit 3'; assert_eq "$?" "3" "$sh R4 command's exit status kept"
+  $sh "$S" run "$t/a" -- echo "@{NO_SUCH_KEY}" > /dev/null 2>&1; assert_eq "$?" "1" "$sh R5 unknown ledger key refused"
+  $sh "$S" run "$t/a" -- echo "@{bad-key}" > /dev/null 2>&1; assert_eq "$?" "1" "$sh R5 bad key refused"
+  $sh "$S" run "$t/a" -- > /dev/null 2>&1; assert_eq "$?" "1" "$sh R5 no command refused"
+  $sh "$S" run "$t/nowhere" -- true > /dev/null 2>&1; assert_eq "$?" "1" "$sh R5 missing ledger refused"
   # a repo that already has a committed .gitignore: exclude only, the .gitignore is left untouched
   mkdir "$t/f2" && git -C "$t/f2" init -q && printf '/vendor/\n' > "$t/f2/.gitignore"
   $sh "$S" init "$t/f2" > /dev/null
