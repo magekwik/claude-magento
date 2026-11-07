@@ -83,7 +83,7 @@ Every choice and every generated credential lives in one git-ignored file, `.mag
 | 3 Environment | Warden · DDEV · docker-magento · Valet; moves DDEV/docker-magento to free ports when 80/443 are taken |
 | 4 Prerequisites | checks the tools; prints the install steps and stops if something is missing |
 | 5 Scaffold | `warden env-init`, `ddev config`, the docker-magento template, or Valet's database; starts the services |
-| 6 Code | `git clone` + `composer install`, or `composer create-project` (Marketplace keys are checked, never asked for in chat) |
+| 6 Code | `git clone` + `composer install`, or `composer create-project` (Marketplace keys stay with Composer: never looked for, read or asked for in chat) |
 | 7 Database | fresh `setup:install`, or an import of a dump *you* placed; optional media archive copied in |
 | 8 Configure | developer mode, base URLs, 2FA off, no cron, reindex |
 | 9 Verify | a read-only agent checks services, database, search, storefront, admin and git-ignores → PASS/FAIL table |
