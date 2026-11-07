@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 — 2026-11-07
+
+### Added
+- `/magekwik-magento:audit cron`: inventories every cron job (the `crontab.xml` files plus `config:show` overrides when the store runs), takes run times from the local `cron_schedule` history (the environment's own database command, or a CSV/TSV export via `--history`), works out the week the way 2.4 core's `cron:run` handles it, and writes `var/cron-audit/report.html` (current and proposed week calendars, findings in plain language, optional agency brand and logo) and `summary.md` (the exact `crontab.xml`, `cron_groups.xml`, regroup plugin and `config:set` changes). A proposed schedule is offered only when it is checked as no worse on peak load and worst wait and better on at least one figure; jobs whose timing matters are never moved. Script-free, read-only, never connects to a live store.
+- `cron-auditor` agent and `skills/ops/references/cron-audit.md`.
+
 ## 1.1.4 — 2026-11-07
 
 ### Changed
