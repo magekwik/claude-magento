@@ -1,6 +1,6 @@
 ---
 name: local-setup
-description: Guided, resumable local Magento environment setup — Warden, DDEV, docker-magento or Valet on macOS, Linux, WSL2 or Windows; new Magento Open Source / Mage-OS install or an existing git repo. Step-wise with a git-ignored .magento-local.env ledger that ends up holding every local credential. Never touches a live database. User-invoked only.
+description: Guided, resumable local Magento environment setup — Warden, DDEV, docker-magento or Valet on macOS, Linux, WSL2 or Windows; new Magento Open Source / Mage-OS install or an existing git repo. Step-wise with a git-ignored .magento-local.env ledger. Uses only local development defaults, never real credentials, and never touches a live database. User-invoked only.
 argument-hint: "[--dir <path>] [--env warden|ddev|docker-magento|valet] [--repo <git-url>] [--new [--distro magento|mage-os]] [--db-dump <path>] [--media <path>] [--status] [--reset]"
 disable-model-invocation: true
 ---
@@ -9,32 +9,106 @@ disable-model-invocation: true
 
 You are setting up a **local** Magento 2 development environment for the user, one step at a time, with a ledger that survives interruptions. Rules that hold for the whole run:
 
-- **Nine steps, in order, each recorded in `.magento-local.env`** (via `local-setup-env.sh step N done|blocked`). On every invocation you resume at the first step that is not `done`. Never skip ahead; never re-run a `done` step unless `--reset`.
+- **Nine steps, in order, each recorded in LEDGER** (`<DIR>/.magento-local.env`, format in *The ledger* below). On every invocation you resume at the first step that is not `done`. Never skip ahead; never re-run a `done` step unless `--reset`.
 - **Human intervention stops the run, cleanly.** When a step needs something only the user can do (install Docker, run a `sudo` command, add Composer keys, drop in a DB dump, open a new shell after an install), do everything you can, mark the step `blocked` with a note, print exactly what they must do, then end with: `Finish that, then re-run /magekwik-magento:local-setup to resume from step N.` Do not loop, poll, or wait.
-- **No live systems.** Never ask for, connect to, or read credentials of any staging/production database, host, API or admin. Every credential is generated locally into `.magento-local.env`. If the user wants real data, the only path is a sanitised dump they place at `.magento-local/db.sql` or `.sql.gz` themselves (step 7).
+- **No live systems, no real credentials.** Never ask for, connect to, or read credentials of any staging/production database, host, API or admin. The store uses local development defaults (the ledger's `DB_*` and `ADMIN_*` values — the same ones Warden, DDEV and docker-magento ship with). They are not secrets: the store is reachable only from this machine. Say so once when the ledger is created, and that the user may change them in the ledger before step 7. If the user wants real data, the only path is a sanitised dump they place at `.magento-local/db.sql` or `.sql.gz` themselves (step 7).
+- **The plugin handles no secrets and ships no scripts.** You run each tool's own commands. Never read `app/etc/env.php` whole — Magento writes its own encryption key there (`setup:install` generates it); Grep it for one non-secret line when you need one. Never look for or touch the user's Composer keys (step 6, Keys).
 - **Ask with the AskUserQuestion tool** when it is available; otherwise ask in plain text and stop until answered. Ask only what the ledger does not already answer. Arguments (`$ARGUMENTS`) pre-answer questions: `--dir`, `--env`, `--repo`, `--new`, `--distro`, `--db-dump`, `--media` (the last two set `DB_DUMP` / `MEDIA_ARCHIVE` in LEDGER, as paths under `.magento-local/`).
 - **Prefix every Magento/Composer command for the chosen environment** (`$MAGE` below). The table and per-tool details are in `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` — read it once at step 5. In non-TTY runs add `-T` for Warden and Compose. `$MAGE` is notation, not a shell variable: write the prefix out, or define a function (`M() { warden env exec -T php-fpm bin/magento "$@"; }`) — zsh does not word-split an unquoted variable, so `$M bin/magento` fails there.
 - **Write nothing outside the target directory** except the tool's own global config (`~/.warden`, `~/.ddev`, Valet's config) which the tools write themselves, and the empty `~/.composer` and `~/.ssh` directories docker-magento mounts.
-- **Never let a secret reach the chat.** Secrets are `ADMIN_PASSWORD`, `DB_PASSWORD`, `DB_ROOT_PASSWORD` and `CRYPT_KEY`; they live only in `.magento-local.env`. Your messages, your tool calls and their output all become the transcript, so:
-  - **Never `get` a secret, and never type one.** Where a command needs one, run it through `local-setup-env.sh run DIR -- <command> <arg>…` and write `@{KEY}` where the value goes (`--db-password=@{DB_PASSWORD}`); the script fills it in from LEDGER and runs the command in the current directory, on the host, so it works the same before `warden env exec`, `ddev` or `bin/` pass it into the container. `@{KEY}` below means exactly that. Everything after `--` is one plain command: no shell function, pipe or `&&` inside it (redirect stdin outside: `… run DIR -- mysql … < file`); for an environment variable use `env NAME=@{KEY} <command>`.
-  - **Files that hold secrets** (`.env`, docker-magento `env/*.env`) are written with `local-setup-env.sh write-env DIR <file> NAME=VALUE NAME=@KEY …` (`@KEY` copies the ledger's value; it prints names only), never with an edit tool.
-  - **Never read** LEDGER, `.env`, `env/*.env` or `app/etc/env.php` whole (no `cat`, Read tool or edit tool), and never look for or touch the user's Composer keys at all (step 6, Keys). Use `get` for a non-secret ledger value, `show` (masks secrets) to display the ledger, and `grep -c` / `grep '^NAME='` for a non-secret line elsewhere.
-  - In messages, hand-overs and blocked notes, name the key and the file (`DB_PASSWORD in <DIR>/.magento-local.env`), never the value.
 - Keep output short: one line per action, no narration of what you are about to do.
 
-Helper scripts (always via `bash "${CLAUDE_PLUGIN_ROOT}/scripts/…"`):
+## The ledger
 
-- `local-setup-detect.sh [dir]` → JSON: `os`, `tools{}`, `dir{}`, `ports{}`, `recommend`. Call it DETECT.
-- `local-setup-env.sh init|get|set|step|next|status|show|ignore|write-env|run <dir> …` → the ledger. Call its file LEDGER.
-- `local-setup-docker-magento.sh <dir>` → copies the docker-magento Compose template into DIR (step 5).
-- `local-setup-ports.sh pick <port>…` → a free host port for each wanted one (step 3).
-- `local-setup-media.sh <dir> --check|--stream|--into <path>` → validates and delivers the media archive (step 7).
+LEDGER is a plain `KEY=VALUE` file you create with the Write tool and update with the Edit tool (Read it freely — it holds no secrets). Create it at step 1 with exactly this content, filling `SETUP_OS`, `SETUP_DIR` (absolute), `PROJECT_NAME`, `DOMAIN` (`<PROJECT_NAME>.test`), `BASE_URL` (`https://<DOMAIN>/`) and anything `$ARGUMENTS` already answered:
+
+```
+# .magento-local.env — written by /magekwik-magento:local-setup
+# Step ledger and settings for this local store. Git-ignored. Edit any value BEFORE the step that uses it,
+# then re-run /magekwik-magento:local-setup to continue. The DB_* and ADMIN_* values are local
+# development defaults, not secrets: the store is reachable only from this machine.
+
+## Target
+SETUP_ENV=
+SETUP_OS=
+SETUP_DIR=
+SETUP_SOURCE=new
+SETUP_GIT_URL=
+SETUP_GIT_BRANCH=
+SETUP_DISTRO=magento
+SETUP_MAGENTO_VERSION=latest
+SETUP_CODE_DIR=.
+PROJECT_NAME=magento
+DOMAIN=
+BASE_URL=
+HTTP_PORT=80
+HTTPS_PORT=443
+
+## Admin
+ADMIN_URI=admin
+ADMIN_USER=admin
+ADMIN_PASSWORD=admin123
+ADMIN_EMAIL=admin@example.com
+ADMIN_FIRSTNAME=Local
+ADMIN_LASTNAME=Admin
+
+## Database (hostnames are service names inside the environment)
+DB_HOST=db
+DB_NAME=magento
+DB_USER=magento
+DB_PASSWORD=magento
+DB_ROOT_PASSWORD=magento
+DB_DISTRIBUTION=mariadb
+DB_DISTRIBUTION_VERSION=10.6
+DB_DUMP=
+MEDIA_ARCHIVE=
+# DB_DUMP: optional — a sanitised dump at .magento-local/db.sql(.gz), imported instead of a fresh install.
+# MEDIA_ARCHIVE: optional — pub/media as .magento-local/media.tar.gz (.tgz, .tar, .zip or a folder).
+
+## Services
+SEARCH_ENGINE=opensearch
+SEARCH_HOST=opensearch
+SEARCH_PORT=9200
+REDIS_HOST=redis
+PHP_VERSION=8.4
+MAGE_MODE=developer
+INSTALL_SAMPLE_DATA=no
+LOCALE=en_GB
+CURRENCY=GBP
+TIMEZONE=Europe/London
+
+## Step ledger (pending | done | blocked) — the command resumes at the first step that is not done
+STEP_1_TARGET=pending
+STEP_2_SOURCE=pending
+STEP_3_ENVIRONMENT=pending
+STEP_4_PREREQUISITES=pending
+STEP_5_SCAFFOLD=pending
+STEP_6_CODE=pending
+STEP_7_DATABASE=pending
+STEP_8_CONFIGURE=pending
+STEP_9_VERIFY=pending
+LAST_NOTE=
+```
+
+- **Set a value:** Edit its `KEY=` line. **Mark a step:** set `STEP_<N>_<NAME>=done|blocked`; on `blocked` also set `LAST_NOTE=[step N blocked] <one-line note>`.
+- **Next step:** the first `STEP_*` line that is not `done` (none → complete).
+- **Ignore rules (IGNORE):** run at step 1 and again after step 6. Target: inside a git repo (`git -C <DIR> rev-parse --git-dir` succeeds) the exclude file `git -C <DIR> rev-parse --git-path info/exclude` (relative to DIR; create its folder if needed); outside one, `<DIR>/.gitignore`. Append each of these lines only if it is not already there as a whole line (`grep -qxF`), after a `# local setup (/magekwik-magento:local-setup)` comment: `.magento-local.env`, `.magento-local/`, `/app/etc/env.php`, `/auth.json`, `/.ddev/homeadditions/.composer/`. Never edit a committed `.gitignore` inside a repo, and never re-save a whole ignore file.
+
+## Detect (DETECT)
+
+Read-only facts about the host and DIR, from plain commands (none needs `sudo`):
+
+- `os`: `uname -s` — `Darwin` → `macos`; `Linux` → `wsl2` if `/proc/version` mentions `microsoft` or `WSL` (case-insensitive), else `linux`; `MINGW*`/`MSYS*`/`CYGWIN*` → `windows`.
+- `tools`: present when `command -v <name>` succeeds — `docker`, `warden`, `ddev`, `valet`, `php`, `composer`, `mysql`, `git`, `mkcert`, `brew`; `docker_compose` when `docker compose version` works; `docker_running` when `docker info` exits 0. Never run `valet --version` or any other `valet` command to detect it: Valet 4 re-runs them under `sudo`.
+- `dir`: `exists`; `empty` (`ls -A`, ignoring `.magento-local.env` and `.magento-local/`); `is_git`; `magento_root` (`bin/magento` or `src/bin/magento`); `setup_file` (`.magento-local.env`); `existing_env` — `warden` (`.warden/`, or `.env` with a `WARDEN_ENV_TYPE=` line), `ddev` (`.ddev/config.yaml`), `docker-magento` (`bin/clinotty` plus `compose.yaml` or `docker-compose.yml`), else none.
+- `recommend`: the `existing_env` if any; else an installed tool — `warden` > `ddev` > `valet` (macOS only, and only with `php`, `composer` and `mysql`) ; else `warden` on macOS, `ddev` elsewhere.
+- **Port busy check (PORT):** `lsof -nP -iTCP:<p> -sTCP:LISTEN` prints a line → busy (fall back to `ss -ltn` or `netstat -an | grep LISTEN`). To **pick** ports for a list of wanted ports: a free one keeps its number; a busy one moves to `8000+p` below 1024 (80 → 8080, 443 → 8443) or `p+10000` above (3306 → 13306), stepping +1 past any busy port and any port already wanted or chosen in this list.
 
 ## 0. Resolve state
 
-1. Parse `$ARGUMENTS`. `--status` → run `local-setup-env.sh status .` (or the `--dir`) and stop. `--reset` → confirm with the user, delete `.magento-local.env` only (never project files), then continue as a fresh run.
+1. Parse `$ARGUMENTS`. `--status` → print the ledger's `STEP_*` lines and `LAST_NOTE` (of `.` or the `--dir`) and stop. `--reset` → confirm with the user, delete `.magento-local.env` only (never project files), then continue as a fresh run.
 2. DIR = `--dir` if given, else the current directory. Run DETECT on DIR.
-3. If `DETECT.dir.setup_file` is true: `N = local-setup-env.sh next DIR`. If N = 10 print the step-9 hand-over block and stop ("already complete"). Otherwise print `Resuming at step N (<name>)` plus `LAST_NOTE` if set, and jump to that step. Every value a resumed step needs comes from LEDGER (`get`), never from re-asking.
+3. If `DETECT.dir.setup_file` is true: N = the ledger's next step. If every step is `done`, print the step-9 hand-over block and stop ("already complete"). Otherwise print `Resuming at step N (<name>)` plus `LAST_NOTE` if set, and jump to that step. Every value a resumed step needs comes from LEDGER, never from re-asking.
 4. Otherwise start at step 1.
 
 ## 1. Target directory
@@ -49,7 +123,7 @@ Decide where the environment lives. Cases, from DETECT:
 
 An explicit `--dir` answers the question: set up **here**, in that directory, keeping what is there (existing code → `SETUP_SOURCE=existing`; anything else stays alongside, and for `--repo` the clone in step 5 lands on top). Files the command itself created — `.magento-local.env` and `.magento-local/` — never make a directory count as non-empty.
 
-If the user names another path: create it (`mkdir -p`), re-run DETECT on it, and from now on DIR is that path. Run `local-setup-env.sh init DIR SETUP_OS=<DETECT.os> SETUP_DIR=<abs path>` (PROJECT_NAME = the directory's basename, lower-cased, non-alphanumerics → `-`; pass it as `PROJECT_NAME=…`). Tell the user the ledger was created and git-ignored, and that they may edit any value before the step that uses it. Mark step 1 `done`.
+If the user names another path: create it (`mkdir -p`), re-run DETECT on it, and from now on DIR is that path. Create LEDGER (*The ledger* above; PROJECT_NAME = the directory's basename, lower-cased, non-alphanumerics → `-`) unless it exists, then run IGNORE. Tell the user the ledger was created and git-ignored, that its database and admin values are local development defaults, and that they may edit any value before the step that uses it. Mark step 1 `done`.
 
 ## 2. Source of the code
 
@@ -75,9 +149,9 @@ Choose `SETUP_ENV` ∈ `warden | ddev | docker-magento | valet`. Pre-answered by
 | **Valet** | no Docker, fastest page loads, services on the host | macOS (Laravel Valet) and Linux (valet-linux). **Not Windows** |
 
 Hard rules: `valet` on `windows`/`wsl2` → refuse, offer DDEV. Any Docker tool on `windows` (non-WSL shell) → tell the user Claude Code must run **inside WSL2** for Warden/docker-magento; DDEV works from either. Ports — never stop or reconfigure whatever already holds a port (another tool's router, a MailHog, a local database serve the user's other projects):
-- **DDEV / docker-magento:** run `bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-ports.sh" pick <ports>` with every host port the tool publishes — DDEV `80 443 8025 8026` (router HTTP/HTTPS, Mailpit HTTP/HTTPS); docker-magento `80 443 3306 6379 9200 9300 5672 15672 1080 8080` (app HTTP/HTTPS, db, redis, opensearch ×2, rabbitmq ×2, mailcatcher, phpmyadmin). It prints `wanted=chosen` per port; a busy port moves to a free one. Record `HTTP_PORT`/`HTTPS_PORT` (the choices for 80/443) in LEDGER, and when `HTTPS_PORT` is not 443 include it in the URL: `BASE_URL=https://<DOMAIN>:<HTTPS_PORT>/`. Tell the user in one line which ports moved and why; step 5 applies them.
+- **DDEV / docker-magento:** pick (PORT, above) every host port the tool publishes — DDEV `80 443 8025 8026` (router HTTP/HTTPS, Mailpit HTTP/HTTPS); docker-magento `80 443 3306 6379 9200 9300 5672 15672 1080 8080` (app HTTP/HTTPS, db, redis, opensearch ×2, rabbitmq ×2, mailcatcher, phpmyadmin). Record `HTTP_PORT`/`HTTPS_PORT` (the choices for 80/443) in LEDGER, and when `HTTPS_PORT` is not 443 include it in the URL: `BASE_URL=https://<DOMAIN>:<HTTPS_PORT>/`. Tell the user in one line which ports moved and why; step 5 applies them.
 - **Warden:** 80/443 held by Warden's own `traefik` container is normal (shared by all Warden projects). Held by anything else → warn and name the occupant (`lsof -nP -iTCP:80 -sTCP:LISTEN` / `sudo ss -ltnp`); Warden's router ports are global, so do not change them.
-- **Valet:** its nginx needs 80/443 on the host; if busy, warn and name the occupant. Set `SETUP_ENV`; set hostnames in LEDGER to match the tool (`DB_HOST`, `SEARCH_HOST`, `REDIS_HOST`): Warden/docker-magento/valet below; DDEV → `DB_HOST=db DB_NAME=db DB_USER=db DB_PASSWORD=db DB_ROOT_PASSWORD=root` (DDEV's fixed database credentials), `SEARCH_HOST=opensearch`, and `REDIS_HOST=` (DDEV has no Redis unless the user adds `ddev add-on get ddev/ddev-redis`; with it empty, step 7 uses file cache and sessions); Valet → `DB_HOST=127.0.0.1 SEARCH_HOST=127.0.0.1 REDIS_HOST=127.0.0.1`. Mark step 3 `done`.
+- **Valet:** its nginx needs 80/443 on the host; if busy, warn and name the occupant. Set `SETUP_ENV`; set hostnames in LEDGER to match the tool (`DB_HOST`, `SEARCH_HOST`, `REDIS_HOST`): Warden/docker-magento/valet below; DDEV → `DB_HOST=db DB_NAME=db DB_USER=db DB_PASSWORD=db DB_ROOT_PASSWORD=root` (DDEV's fixed local database login), `SEARCH_HOST=opensearch`, and `REDIS_HOST=` (DDEV has no Redis unless the user adds `ddev add-on get ddev/ddev-redis`; with it empty, step 7 uses file cache and sessions); Valet → `DB_HOST=127.0.0.1 SEARCH_HOST=127.0.0.1 REDIS_HOST=127.0.0.1`. Mark step 3 `done`.
 
 ## 4. Prerequisites
 
@@ -95,12 +169,12 @@ When something is missing that the user can install without root (e.g. Composer 
 
 ## 5. Scaffold the environment
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` now. Work in DIR. Values come from LEDGER (`get`).
+Read `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` now. Work in DIR. Values come from LEDGER.
 
 **First, for `SETUP_SOURCE=repo` only:** if CODE (DIR, or `DIR/src` for docker-magento) has no `composer.json`, clone now — `git clone [--branch <SETUP_GIT_BRANCH>] <SETUP_GIT_URL> <CODE>` (DIR holding only the ledger and `.magento-local/` → clone into `_clone`, then `bash -c 'shopt -s dotglob; mv _clone/* .; rmdir _clone'` (`shopt` is a bash built-in; the user's shell may be zsh) — this is on the host, before any container mounts exist, so `mv` is safe here). Scaffolding then lands on top of the repo, and the repo's own `.gitignore`/env files are respected. Clone failure (auth, wrong URL) → **blocked** with the git error. Then:
 
 **warden**
-1. `warden env-init <PROJECT_NAME> magento2` (skip if `grep -q '^WARDEN_ENV_TYPE=' .env` succeeds). Set the keys below with one `local-setup-env.sh write-env DIR .env …` call (it adds missing keys): `TRAEFIK_DOMAIN=<DOMAIN>` (Warden wants domain + subdomain: set `TRAEFIK_DOMAIN` to the part after the first dot and `TRAEFIK_SUBDOMAIN` to the part before — `app.magento.test` → `magento.test` / `app`; a bare `magento.test` → `TRAEFIK_DOMAIN=magento.test`, `TRAEFIK_SUBDOMAIN=app`, and set `DOMAIN=app.magento.test` + `BASE_URL` in LEDGER), `PHP_VERSION`, `MYSQL_DISTRIBUTION`/`_VERSION` from `DB_DISTRIBUTION*`, `WARDEN_OPENSEARCH=1`, `WARDEN_REDIS=1`, `WARDEN_VARNISH=0`, `WARDEN_RABBITMQ=0`, `MYSQL_DATABASE=@DB_NAME MYSQL_USER=@DB_USER MYSQL_PASSWORD=@DB_PASSWORD MYSQL_ROOT_PASSWORD=@DB_ROOT_PASSWORD`. If `.env` is tracked by git (`git ls-files --error-unmatch .env` succeeds), ignoring it has no effect: tell the user the local passwords now show in its diff and must not be committed (`git update-index --skip-worktree .env` hides the change locally, if they want that).
+1. `warden env-init <PROJECT_NAME> magento2` (skip if `grep -q '^WARDEN_ENV_TYPE=' .env` succeeds). In `.env`, set (Edit an existing `KEY=` line, or append it): `TRAEFIK_DOMAIN=<DOMAIN>` (Warden wants domain + subdomain: set `TRAEFIK_DOMAIN` to the part after the first dot and `TRAEFIK_SUBDOMAIN` to the part before — `app.magento.test` → `magento.test` / `app`; a bare `magento.test` → `TRAEFIK_DOMAIN=magento.test`, `TRAEFIK_SUBDOMAIN=app`, and set `DOMAIN=app.magento.test` + `BASE_URL` in LEDGER), `PHP_VERSION`, `MYSQL_DISTRIBUTION`/`_VERSION` from `DB_DISTRIBUTION*`, `WARDEN_OPENSEARCH=1`, `WARDEN_REDIS=1`, `WARDEN_VARNISH=0`, `WARDEN_RABBITMQ=0`. Warden's database login is its own default (`magento`/`magento`, database `magento`, host `db`), which the ledger's defaults already match; if the user changed `DB_*` in the ledger, set them back to those values and say why.
 2. `warden sign-certificate <TRAEFIK_DOMAIN>` — this calls `sudo` on first use. If it prompts or fails for lack of a TTY → **blocked**: tell the user to run that one command, then resume.
 3. `warden env up`, then `warden env exec -T php-fpm mkdir -p pub/static pub/media var generated`.
 
@@ -111,15 +185,16 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/ops/references/dev-envs.md` now. Work in DIR.
 4. `ddev start`. First start may ask for `sudo` to edit `/etc/hosts` or trust mkcert → **blocked** if it cannot complete non-interactively.
 
 **docker-magento**
-1. If `compose.yaml` + `bin/clinotty` are absent: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-docker-magento.sh" DIR` — copies the template only (no install yet), never overwrites a file, merges `.gitignore`, and leaves DIR's `.git` alone. Never run upstream's `lib/template | bash` instead: it deletes DIR's `.git`, which drops the ledger's ignore rules. Exit 1 on an existing `bin/` → **blocked**: tell the user `bin/` is in the way. Record its last line's `<repo>@<sha>` as `SETUP_DM_TEMPLATE` in LEDGER. Code lives in `src/`; write `SETUP_CODE_DIR=src` to LEDGER (other tools: `.`).
-2. Reconcile `env/db.env` and `env/magento.env` to LEDGER with `write-env` (the wrappers read these, so they must agree with LEDGER): `env/db.env` `MYSQL_DATABASE=@DB_NAME MYSQL_USER=@DB_USER MYSQL_PASSWORD=@DB_PASSWORD MYSQL_ROOT_PASSWORD=@DB_ROOT_PASSWORD`; `env/magento.env` each `MAGENTO_ADMIN_*` key it already has, from the matching ledger key (`MAGENTO_ADMIN_PASSWORD=@ADMIN_PASSWORD` …), `MAGENTO_URL=@DOMAIN`. List a file's key names with `cut -d= -f1 env/magento.env`. Pin `compose.yaml` PHP image to `PHP_VERSION` if a matching tag exists (`markoshust/magento-php:<ver>-fpm-…`).
+1. If `compose.yaml` + `bin/clinotty` are absent, copy the template (never upstream's `lib/template | bash`: it pipes a download into a shell and deletes DIR's `.git`, which drops the ignore rules). An existing `bin/` → **blocked**: tell the user `bin/` is in the way. Otherwise, using a temp folder T under `.magento-local/`:
+   `git clone -q --depth 1 --branch 53.2.0 https://github.com/markshust/docker-magento <T>` (a fixed release, so what runs is what was reviewed), then copy every file of `<T>/compose/` into DIR without overwriting anything (`cp -Rpn <T>/compose/. <DIR>/`), except `.gitignore`: when DIR has one, append only its missing lines. Then `mkdir -p ~/.composer ~/.ssh` (upstream does this so Docker does not create them as root), record `SETUP_DM_TEMPLATE=markshust/docker-magento@53.2.0` in LEDGER, and `rm -rf <T>`. Code lives in `src/`; write `SETUP_CODE_DIR=src` to LEDGER (other tools: `.`).
+2. Make `env/db.env` and `env/magento.env` agree with LEDGER (the wrappers read these): Read them, then Edit `env/db.env` `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` to `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`, and in `env/magento.env` each `MAGENTO_ADMIN_*` key it already has to the matching ledger value, plus `MAGENTO_URL=<DOMAIN>`. Pin `compose.yaml` PHP image to `PHP_VERSION` if a matching tag exists (`markoshust/magento-php:<ver>-fpm-…`).
 3. If step 3 moved any port, write `compose.override.yaml` (the `bin/docker-compose` wrapper loads it last) replacing the ports of only the affected services with `!override` — a plain override would add to the list, not replace it, and the old port would still clash. Container ports stay as upstream: `app` `"<HTTP>:8000"`, `"<HTTPS>:8443"`; `db` `"<p>:3306"`; `redis` `"<p>:6379"`; `opensearch` `"<p>:9200"`, `"<p>:9300"`; `rabbitmq` `"<p>:15672"`, `"<p>:5672"`; `mailcatcher` `"<p>:1080"`; `phpmyadmin` `"<p>:80"`. Example: `services:\n  app:\n    ports: !override\n      - "8081:8000"\n      - "8443:8443"`. `!override` needs Docker Compose ≥ 2.24 (`docker compose version`); older → **blocked**: ask the user to update Docker. Add `/compose.override.yaml` to DIR's `.git/info/exclude` (or `.gitignore` outside a repo) — it is machine-specific.
 4. The template bind-mounts `~/.ssh/id_rsa` and `~/.ssh/known_hosts`. For each that does not exist on the host (ed25519-only users have no `id_rsa`), Docker would create a **directory** at that path in the user's home: instead create an empty file under `.magento-local/` and mount it at the same container path in `compose.override.yaml` for `app`, `phpfpm` and `phpfpm-xdebug` (compose merges volumes by container path, so this replaces the upstream mount).
 5. The domain must resolve to this machine: check `getent hosts <DOMAIN>` / `dscacheutil -q host -a name <DOMAIN>` (macOS) for `127.0.0.1`. Many machines resolve `*.test` already (Warden's or DDEV's DNS), but a bare one does not → **blocked**: the user runs `echo "127.0.0.1 <DOMAIN>" | sudo tee -a /etc/hosts` (what upstream's `bin/setup-domain` does with `sudo`), then resume.
 6. `bin/start --no-dev` (pulls images; several minutes). Upstream's own install flow starts without the dev mounts while `src/` is still empty — `bin/start` in dev mode refuses to start when the `src/` files it mounts are missing. `bin/start` needs at least 6 GB of Docker memory; if containers are OOM-killed, **blocked**: free memory or raise Docker's limit — never stop the user's other projects yourself.
 
 **valet**
-1. `valet park` is not used; use `valet link <PROJECT_NAME>` from the code directory **after** step 6 — record `SETUP_VALET_LINK=pending`. Here: ensure services run — macOS: `valet status` for nginx/PHP/dnsmasq (they run as root, so `brew services list` shows them as `none` even when up; if PHP-FPM is down the site answers 502 → `valet restart`; if `valet status` still says PHP is not running, `sudo brew services restart php` — `valet trust` also allows `brew` without a password), `brew services list` for the database and OpenSearch; Linux: `systemctl status` — then create the database with an admin login that needs no password: Homebrew MySQL → `mysql -uroot`; Homebrew MariaDB → plain `mysql` (it signs in as the macOS user over the socket and refuses `-uroot` with ERROR 1698) — try `mysql -uroot -e 'select 1'`, then `mysql -e 'select 1'`, and use the first that works: `local-setup-env.sh run DIR -- <admin> -e "CREATE DATABASE IF NOT EXISTS \`<DB_NAME>\`; CREATE USER IF NOT EXISTS '<DB_USER>'@'localhost' IDENTIFIED BY '@{DB_PASSWORD}'; GRANT ALL ON \`<DB_NAME>\`.* TO '<DB_USER>'@'localhost';"`). If `valet status` or a `valet` command fails with `sudo: a terminal is required` → **blocked**: the user runs `valet trust`, then resume. If neither login works (the admin user has a password you do not have) → **blocked**: give the user the exact command to run themselves — `! bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-env.sh" run <DIR> -- mysql -uroot -p -e "CREATE …"` with the password written as `@{DB_PASSWORD}`, so its value never appears in the chat — and resume. Set `DOMAIN=<PROJECT_NAME>.test` (Valet's default TLD; read `valet tld` if changed).
+1. `valet park` is not used; use `valet link <PROJECT_NAME>` from the code directory **after** step 6 — record `SETUP_VALET_LINK=pending`. Here: ensure services run — macOS: `valet status` for nginx/PHP/dnsmasq (they run as root, so `brew services list` shows them as `none` even when up; if PHP-FPM is down the site answers 502 → `valet restart`; if `valet status` still says PHP is not running, `sudo brew services restart php` — `valet trust` also allows `brew` without a password), `brew services list` for the database and OpenSearch; Linux: `systemctl status` — then create the database with an admin login that needs no password: Homebrew MySQL → `mysql -uroot`; Homebrew MariaDB → plain `mysql` (it signs in as the macOS user over the socket and refuses `-uroot` with ERROR 1698) — try `mysql -uroot -e 'select 1'`, then `mysql -e 'select 1'`, and use the first that works: `<admin> -e "CREATE DATABASE IF NOT EXISTS \`<DB_NAME>\`; CREATE USER IF NOT EXISTS '<DB_USER>'@'localhost' IDENTIFIED BY '<DB_PASSWORD>'; GRANT ALL ON \`<DB_NAME>\`.* TO '<DB_USER>'@'localhost';"`). If `valet status` or a `valet` command fails with `sudo: a terminal is required` → **blocked**: the user runs `valet trust`, then resume. If neither login works (the database admin has a password you do not have — never ask for it) → **blocked**: give the user the exact command to run themselves — `mysql -uroot -p -e "CREATE …"` with the same statements — and resume. Set `DOMAIN=<PROJECT_NAME>.test` (Valet's default TLD; read `valet tld` if changed).
 
 Mark step 5 `done` only when services report healthy (`warden env ps` / `ddev describe` / `bin/status` / `brew services`).
 
@@ -140,26 +215,26 @@ Then resume. If Composer still refuses, the keys are wrong, lack access or are n
 
 Warden and DDEV on macOS sync code to the host with Mutagen, so files created in the container appear on the host only after the sync catches up: run host-side checks once `warden sync list` reports `Watching for changes` / after `ddev mutagen sync`, or check inside the container.
 
-After install: `local-setup-env.sh ignore DIR` again (the new repo now has a `.git`; and if copying the project into place replaced `.gitignore`, this restores the entries — it adds only missing lines, so never save and re-append `.gitignore` by hand), confirm `app/etc/env.php` and `.magento-local.env` are both ignored (`git check-ignore -q <file>`). Mark step 6 `done`.
+After install: run IGNORE again (the new repo now has a `.git`; and if copying the project into place replaced `.gitignore`, this restores the entries), confirm `app/etc/env.php` and `.magento-local.env` are both ignored (`git check-ignore -q <file>`). Mark step 6 `done`.
 
 ## 7. Database
 
 Never connect anywhere outside the environment. Two paths.
 
-**Before either, Valet only** (the other tools run the database image step 3 chose): the host database must be a version this Magento accepts. Read it (`local-setup-env.sh run DIR -- env MYSQL_PWD=@{DB_PASSWORD} mysql -u<DB_USER> -h<DB_HOST> -Nse 'select version()'`) and match it against the `supportedVersionPatterns` items in `app/etc/di.xml` (`grep -A12 supportedVersionPatterns app/etc/di.xml`). No match → **blocked**: name the version found and the supported ones, and tell the user to install a listed one (`brew services stop mariadb && brew unlink mariadb`, move the old data directory aside — `mv $(brew --prefix)/var/mysql $(brew --prefix)/var/mysql-<old version>` — because every Homebrew MariaDB shares it and an older server cannot open a newer one's files, then `brew install mariadb@11.8 && brew link --force mariadb@11.8 && brew services start mariadb@11.8`; the new server starts empty, so reset step 5 to `pending` to create the database and user again). Never get past the check another way: no `--skip-db-validation`, no module or plugin that rewrites the reported version, no edits under `vendor/` — the store would run on an untested database.
+**Before either, Valet only** (the other tools run the database image step 3 chose): the host database must be a version this Magento accepts. Read it (`MYSQL_PWD=<DB_PASSWORD> mysql -u<DB_USER> -h<DB_HOST> -Nse 'select version()'`) and match it against the `supportedVersionPatterns` items in `app/etc/di.xml` (`grep -A12 supportedVersionPatterns app/etc/di.xml`). No match → **blocked**: name the version found and the supported ones, and tell the user to install a listed one (`brew services stop mariadb && brew unlink mariadb`, move the old data directory aside — `mv $(brew --prefix)/var/mysql $(brew --prefix)/var/mysql-<old version>` — because every Homebrew MariaDB shares it and an older server cannot open a newer one's files, then `brew install mariadb@11.8 && brew link --force mariadb@11.8 && brew services start mariadb@11.8`; the new server starts empty, so reset step 5 to `pending` to create the database and user again). Never get past the check another way: no `--skip-db-validation`, no module or plugin that rewrites the reported version, no edits under `vendor/` — the store would run on an untested database.
 
-**Then:** if `DB_DUMP` or `MEDIA_ARCHIVE` is set but its file is not there yet → **blocked**, listing: where to put each file (`.magento-local/` in DIR); that the dump must be sanitised (no customer PII, no production keys); and that if the source store keeps encrypted config, they must set `CRYPT_KEY` in `.magento-local.env` to that store's `crypt/key` from its `app/etc/env.php` — by editing the file, never by pasting it into the chat. To switch back to a fresh install they clear `DB_DUMP`. On resume, re-check the files before importing.
+**Then:** if `DB_DUMP` or `MEDIA_ARCHIVE` is set but its file is not there yet → **blocked**, listing: where to put each file (`.magento-local/` in DIR); that the dump must be sanitised (no customer PII, no production keys); and that if the source store keeps encrypted config, after the import they put that store's `crypt/key` into `app/etc/env.php` themselves — never into the chat, and you do not handle it. To switch back to a fresh install they clear `DB_DUMP`. On resume, re-check the files before importing.
 
-**A. Import a dump** — only if `DB_DUMP` in LEDGER names an existing file (user placed it under `.magento-local/`). Tell the user before importing that it must be sanitised (no customer PII, no production keys). Import: Warden `warden db import < file` (gunzip first if `.gz`), DDEV `ddev import-db --file=<file>`, docker-magento `bin/mysql < file`, Valet `local-setup-env.sh run DIR -- env MYSQL_PWD=@{DB_PASSWORD} mysql -u<DB_USER> <DB_NAME> < file`. Then write `app/etc/env.php` (if missing, `$MAGE bin/magento setup:config:set` with LEDGER values: `--db-host --db-name --db-user --db-password=@{DB_PASSWORD} --backend-frontname=<ADMIN_URI> --key=@{CRYPT_KEY}` — `CRYPT_KEY` is whatever the user left in LEDGER). `setup:config:set` does not write `install/date`, and without it Magento treats the store as not installed and hides most commands; add it if missing: `$MAGE php -r '$f="app/etc/env.php"; $c=include $f; if (empty($c["install"]["date"])) { $c["install"]["date"]=gmdate("D, d M Y H:i:s +0000"); file_put_contents($f, "<?php\nreturn ".var_export($c, true).";\n"); }'`. Then `$MAGE bin/magento setup:upgrade`.
+**A. Import a dump** — only if `DB_DUMP` in LEDGER names an existing file (user placed it under `.magento-local/`). Tell the user before importing that it must be sanitised (no customer PII, no production keys). Import: Warden `warden db import < file` (gunzip first if `.gz`), DDEV `ddev import-db --file=<file>`, docker-magento `bin/mysql < file`, Valet `MYSQL_PWD=<DB_PASSWORD> mysql -u<DB_USER> <DB_NAME> < file`. Then write `app/etc/env.php` (if missing, `$MAGE bin/magento setup:config:set` with LEDGER values: `--db-host --db-name --db-user --db-password --backend-frontname=<ADMIN_URI>`; Magento generates the encryption key). `setup:config:set` does not write `install/date`, and without it Magento treats the store as not installed and hides most commands; add it if missing: `$MAGE php -r '$f="app/etc/env.php"; $c=include $f; if (empty($c["install"]["date"])) { $c["install"]["date"]=gmdate("D, d M Y H:i:s +0000"); file_put_contents($f, "<?php\nreturn ".var_export($c, true).";\n"); }'`. Then `$MAGE bin/magento setup:upgrade`.
 
-**B. Fresh install** (default), through `local-setup-env.sh run DIR --` with the `$MAGE` prefix written out:
+**B. Fresh install** (default), with the `$MAGE` prefix written out (no `--key`: Magento generates the encryption key into `app/etc/env.php`):
 ```
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-env.sh" run <DIR> -- $MAGE bin/magento setup:install \
+$MAGE bin/magento setup:install \
   --base-url=<BASE_URL> --backend-frontname=<ADMIN_URI> \
-  --db-host=<DB_HOST> --db-name=<DB_NAME> --db-user=<DB_USER> --db-password=@{DB_PASSWORD} \
+  --db-host=<DB_HOST> --db-name=<DB_NAME> --db-user=<DB_USER> --db-password=<DB_PASSWORD> \
   --admin-firstname=<ADMIN_FIRSTNAME> --admin-lastname=<ADMIN_LASTNAME> --admin-email=<ADMIN_EMAIL> \
-  --admin-user=<ADMIN_USER> --admin-password=@{ADMIN_PASSWORD} \
-  --language=<LOCALE> --currency=<CURRENCY> --timezone=<TIMEZONE> --use-rewrites=1 --key=@{CRYPT_KEY} \
+  --admin-user=<ADMIN_USER> --admin-password=<ADMIN_PASSWORD> \
+  --language=<LOCALE> --currency=<CURRENCY> --timezone=<TIMEZONE> --use-rewrites=1 \
   --search-engine=<SEARCH_ENGINE> --<SEARCH_ENGINE>-host=<SEARCH_HOST> --<SEARCH_ENGINE>-port=<SEARCH_PORT> \
   --session-save=redis --session-save-redis-host=<REDIS_HOST> --session-save-redis-db=2 \
   --cache-backend=redis --cache-backend-redis-server=<REDIS_HOST> --cache-backend-redis-db=0 \
@@ -167,12 +242,16 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-env.sh" run <DIR> -- $MAGE bin/m
 ```
 Drop the three Redis groups when `REDIS_HOST` is empty or the tool has no Redis (Valet without `redis`). `--search-engine` value is `opensearch` or `elasticsearch7`; the host/port flags are `--opensearch-host/--opensearch-port` or `--elasticsearch-host/--elasticsearch-port`. Magento ≥ 2.4.6 defaults to OpenSearch. If `setup:install` fails on a missing `pub/static` write permission inside Warden, run the `mkdir` from step 5 and retry once. Any other failure: show the last 30 lines, mark `blocked` with the error summary, stop.
 
-**Media (optional, after A or B)** — only if `MEDIA_ARCHIVE` in LEDGER names a file or folder the user placed under `.magento-local/` (`.tar.gz`, `.tgz`, `.tar`, `.zip` or a folder; its contents are `pub/media`, optionally wrapped in one `media/` or `pub/media/` folder). Never fetch media from a live store or ask for server access. Validate first: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/local-setup-media.sh" DIR --check` (refuses absolute or `..` paths, links, and anything outside `.magento-local/`; on refusal → **blocked** with its message). Then copy it **into the container**, not onto the host — Warden on macOS does not sync `pub/media` to the container, and DDEV/docker-magento treat it specially:
-- Warden: `local-setup-media.sh DIR --stream | warden env exec -T php-fpm tar -xf - -C pub/media`
-- DDEV: `local-setup-media.sh DIR --stream | ddev exec -s web tar -xf - -C pub/media`
-- docker-magento: `local-setup-media.sh DIR --stream | (cd DIR && bin/docker-compose exec -T phpfpm tar -xf - -C /var/www/html/pub/media)` (`/var/www/html` is a named volume, so the host's `src/pub/media` is not it)
-- Valet: `local-setup-media.sh DIR --into <CODE>/pub/media`
-Then `$MAGE bin/magento cache:flush`. Do not run `catalog:images:resize` (slow); mention it as optional.
+**Media (optional, after A or B)** — only if `MEDIA_ARCHIVE` in LEDGER names a file or folder the user placed under `.magento-local/` (`.tar.gz`, `.tgz`, `.tar`, `.zip` or a folder; its contents are `pub/media`, optionally wrapped in one `media/` or `pub/media/` folder). Never fetch media from a live store or ask for server access. Validate first; any failure → **blocked** with the reason:
+- The path, with symlinks resolved (`cd "$(dirname P)" && pwd -P`), must sit inside DIR's `.magento-local/`.
+- List the entries (`tar -tf A`, `unzip -Z1 A`, or `find F` for a folder): none may start with `/` or contain a `..` segment; no links (`tar -tvf A` lines starting with `l` or `h`, `find F -type l`); at least one file.
+- WRAP = the number of leading folders to drop: 1 when every entry sits under one `media/` folder, 2 under `pub/media/`, else 0.
+
+Then copy it **into the container**, not onto the host — Warden on macOS does not sync `pub/media` to the container, and DDEV/docker-magento treat it specially. EXEC is `warden env exec -T php-fpm`, `ddev exec -s web`, or (from DIR) `bin/docker-compose exec -T phpfpm` with target `/var/www/html/pub/media` (a named volume, so the host's `src/pub/media` is not it); with a `.zip`, first unzip it into a temp folder under `.magento-local/` and treat that folder as F:
+- archive A: `COPYFILE_DISABLE=1 cat A | EXEC tar -xf - -C pub/media --strip-components=WRAP` (`tar` reads `.gz` itself)
+- folder F: `COPYFILE_DISABLE=1 tar -C F -cf - . | EXEC tar -xf - -C pub/media --strip-components=WRAP` (count WRAP from F's top level, after the `./` prefix)
+- Valet: extract on the host straight into `<CODE>/pub/media` with the same `--strip-components`.
+Remove any temp folder afterwards. Then `$MAGE bin/magento cache:flush`. Do not run `catalog:images:resize` (slow); mention it as optional.
 
 Sample data when `INSTALL_SAMPLE_DATA=yes`: `$MAGE bin/magento sampledata:deploy` (needs keys) then `setup:upgrade`.
 
@@ -200,22 +279,22 @@ indexer:reindex
 cache:flush
 ```
 If `cron:remove` fails because macOS denies `crontab` (Operation not permitted), there is no Magento crontab to remove: note it and go on. If reindexing fails with `cluster_block_exception` / `index create block`, the search engine has hit its disk watermark (disk ≥ 90% full) — a machine-wide condition, not this store: **blocked**, telling the user to free disk space, or, for a local single-node search service they accept it for, to run `curl -X PUT http://<SEARCH_HOST>:<SEARCH_PORT>/_cluster/settings -H 'Content-Type: application/json' -d '{"persistent":{"cluster.routing.allocation.disk.threshold_enabled":false,"cluster.blocks.create_index":null}}'` themselves (it applies to every project on that service). Do not change cluster settings yourself.
-For an imported dump additionally reset the admin: `admin:user:create --admin-user=<ADMIN_USER> --admin-password=@{ADMIN_PASSWORD} --admin-email=<ADMIN_EMAIL> --admin-firstname=… --admin-lastname=…` (creates or updates), `cache:flush`. docker-magento only: the HTTPS certificate is not trusted until the user runs `bin/setup-ssl-ca` and `bin/setup-ssl <DOMAIN>` (both use `sudo`) — never run them; list them in the hand-over, and expect the verifier's storefront check to WARN until then. Valet only: `valet link <PROJECT_NAME>` in CODE, then `valet secure <PROJECT_NAME>` (may need `sudo` → blocked, resume), and set `SETUP_VALET_LINK=done`. Warden: if the domain was changed in step 5, `warden sign-certificate` again. Mark step 8 `done`.
+For an imported dump additionally reset the admin: `admin:user:create --admin-user=<ADMIN_USER> --admin-password=<ADMIN_PASSWORD> --admin-email=<ADMIN_EMAIL> --admin-firstname=… --admin-lastname=…` (creates or updates), `cache:flush`. docker-magento only: the HTTPS certificate is not trusted until the user runs `bin/setup-ssl-ca` and `bin/setup-ssl <DOMAIN>` (both use `sudo`) — never run them; list them in the hand-over, and expect the verifier's storefront check to WARN until then. Valet only: `valet link <PROJECT_NAME>` in CODE, then `valet secure <PROJECT_NAME>` (may need `sudo` → blocked, resume), and set `SETUP_VALET_LINK=done`. Warden: if the domain was changed in step 5, `warden sign-certificate` again. Mark step 8 `done`.
 
 ## 9. Verify and hand over
 
 1. Dispatch the `local-setup-verifier` agent with: DIR, the full LEDGER path, `SETUP_ENV`, `$MAGE` prefix, `BASE_URL`, `ADMIN_URI`. It is read-only and returns a `PASS`/`FAIL` table.
 2. If any FAIL: fix what you can in this run (one retry per check: e.g. `cache:flush`, `indexer:reindex`, `warden env up`), re-dispatch once; still failing → mark step 9 `blocked` with the failing check names and stop with the agent's fix hints.
-3. All PASS: mark step 9 `done`. When a dump was imported, say the store uses the `CRYPT_KEY` from LEDGER and that encrypted settings decrypt only if it is the source store's key — you cannot tell whether it is, so do not claim either way. Do not run `/magekwik-magento:init` yourself; say one line: "Run `/magekwik-magento:init` to write CLAUDE.md for this project." Then print exactly this (no password or key values; do not print `show` here):
+3. All PASS: mark step 9 `done`. When a dump was imported, say encrypted settings decrypt only if the user put the source store's key into `app/etc/env.php` — you cannot tell whether they did, so do not claim either way. Do not run `/magekwik-magento:init` yourself; say one line: "Run `/magekwik-magento:init` to write CLAUDE.md for this project." Then print exactly this:
 
 ```
 Local environment ready — <SETUP_ENV> at <DIR>
 Store:  <BASE_URL>
 Admin:  <BASE_URL><ADMIN_URI>   user <ADMIN_USER>
-DB:     <DB_USER> @ <DB_HOST>/<DB_NAME>
+        password <ADMIN_PASSWORD>   (local development default — change it in the admin if you like)
+DB:     <DB_USER> / <DB_PASSWORD> @ <DB_HOST>/<DB_NAME>
 CLI:    <$MAGE> bin/magento …
-Passwords: <DIR>/.magento-local.env — ADMIN_PASSWORD, DB_PASSWORD, DB_ROOT_PASSWORD, CRYPT_KEY
-           (git-ignored; keep it, it is the only copy)
+Ledger: <DIR>/.magento-local.env (git-ignored)
 ```
 
 ## Resume contract (what "blocked" prints)
