@@ -6,6 +6,10 @@
 - `/magekwik-magento:audit cron`: inventories every cron job (the `crontab.xml` files plus `config:show` overrides when the store runs), takes run times from the local `cron_schedule` history (the environment's own database command, or a CSV/TSV export via `--history`), works out the week the way 2.4 core's `cron:run` handles it, and writes `var/cron-audit/report.html` (current and proposed week calendars, findings in plain language, optional agency brand and logo) and `summary.md` (the exact `crontab.xml`, `cron_groups.xml`, regroup plugin and `config:set` changes). A proposed schedule is offered only when it is checked as no worse on peak load and worst wait and better on at least one figure; jobs whose timing matters are never moved. Script-free, read-only, never connects to a live store.
 - `cron-auditor` agent and `skills/ops/references/cron-audit.md`.
 
+### Fixed (found by live runs on a production-shaped store and a fresh DDEV install)
+- Cron audit: `crontab.xml` is parsed as XML, so jobs whose `<job>` attributes span several lines are no longer lost; only modules `config.php` enables are read, which skips test fixtures under `vendor/*/tests/`; a `config_path` schedule falls back to the module's `config.xml` default when the database has none; config-only jobs (scheduled import/export operations) are included; job names suggest a heavy class only for jobs that run hourly or less often; hourly load counts seconds of work, so dozens of every-minute jobs no longer hide the real peaks.
+- `/magekwik-magento:local-setup`: on DDEV, `create-project` runs through `ddev exec` into a temp folder (the `ddev composer` wrapper accepts only `.`); on Mage-OS, `MageOS_PasskeyAuth` is disabled with 2FA; the ignore check works in a folder with no git repo; a full search-engine disk names Docker's VM disk and explains that OpenSearch's `create_index` block must be cleared after space is freed.
+
 ## 1.1.4 — 2026-11-07
 
 ### Changed
