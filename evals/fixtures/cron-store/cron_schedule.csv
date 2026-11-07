@@ -1,0 +1,12 @@
+job_code,status,scheduled_at,executed_at,finished_at
+acme_feed_export,success,2026-10-20 10:00:00,2026-10-20 10:00:05,2026-10-20 10:25:05
+acme_feed_export,success,2026-10-20 10:30:00,2026-10-20 10:30:04,2026-10-20 10:55:04
+acme_feed_export,success,2026-10-20 11:00:00,2026-10-20 11:00:03,2026-10-20 11:25:03
+acme_feed_export,success,2026-10-20 11:30:00,2026-10-20 11:30:02,2026-10-20 11:55:02
+aggregate_sales_report_order_data,success,2026-10-20 00:00:00,2026-10-20 00:00:10,2026-10-20 00:07:10
+aggregate_sales_report_order_data,success,2026-10-21 00:00:00,2026-10-21 00:00:11,2026-10-21 00:07:11
+aggregate_sales_report_order_data,success,2026-10-22 00:00:00,2026-10-22 00:00:09,2026-10-22 00:07:09
+sales_clean_quotes,success,2026-10-20 00:00:00,2026-10-20 00:07:10,2026-10-20 00:11:10
+sales_clean_quotes,success,2026-10-21 00:00:00,2026-10-21 00:07:11,2026-10-21 00:11:11
+sales_clean_quotes,success,2026-10-22 00:00:00,2026-10-22 00:07:09,2026-10-22 00:11:09
+sales_clean_quotes,error,2026-10-23 00:00:00,2026-10-23 00:07:00,NULL

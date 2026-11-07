@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<config>
+    <group id="default">
+        <job name="catalogrule_apply_all" instance="Magento\CatalogRule\Cron\DailyCatalogUpdate" method="execute">
+            <schedule>0 1 * * *</schedule>
+        </job>
+    </group>
+</config>

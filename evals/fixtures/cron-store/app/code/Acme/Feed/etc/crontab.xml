@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config>
+    <group id="default">
+        <job name="acme_feed_export" instance="Acme\Feed\Cron\ExportProducts" method="execute">
+            <schedule>*/30 * * * *</schedule>
+        </job>
+        <job name="acme_feed_cleanup" instance="Acme\Feed\Cron\Cleanup" method="execute"/>
+    </group>
+</config>

@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<config>
+    <group id="default">
+        <job name="currency_rates_update" instance="Magento\Directory\Model\Observer" method="scheduledUpdateCurrencyRates">
+            <config_path>crontab/default/jobs/currency_rates_update/schedule/cron_expr</config_path>
+        </job>
+    </group>
+</config>

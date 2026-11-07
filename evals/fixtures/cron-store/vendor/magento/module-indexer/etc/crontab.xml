@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<config>
+    <group id="index">
+        <job name="indexer_reindex_all_invalid" instance="Magento\Indexer\Cron\ReindexAllInvalid" method="execute">
+            <schedule>* * * * *</schedule>
+        </job>
+        <job name="indexer_update_all_views" instance="Magento\Indexer\Cron\UpdateMview" method="execute">
+            <schedule>* * * * *</schedule>
+        </job>
+        <job name="indexer_clean_all_changelogs" instance="Magento\Indexer\Cron\ClearChangelog" method="execute">
+            <schedule>*/5 * * * *</schedule>
+        </job>
+    </group>
+</config>

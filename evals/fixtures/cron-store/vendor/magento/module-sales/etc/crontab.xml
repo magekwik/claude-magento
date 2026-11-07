@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<config>
+    <group id="default">
+        <job name="sales_clean_quotes" instance="Magento\Sales\Cron\CleanExpiredQuotes" method="execute">
+            <schedule>0 0 * * *</schedule>
+        </job>
+        <job name="aggregate_sales_report_order_data" instance="Magento\Sales\Model\CronJob\AggregateSalesReportOrderData" method="execute">
+            <schedule>0 0 * * *</schedule>
+        </job>
+        <job name="aggregate_sales_report_invoiced_data" instance="Magento\Sales\Model\CronJob\AggregateSalesReportInvoicedData" method="execute">
+            <schedule>0 0 * * *</schedule>
+        </job>
+        <job name="aggregate_sales_report_refunded_data" instance="Magento\Sales\Model\CronJob\AggregateSalesReportRefundedData" method="execute">
+            <schedule>0 0 * * *</schedule>
+        </job>
+        <job name="aggregate_sales_report_bestsellers_data" instance="Magento\Sales\Model\CronJob\AggregateSalesReportBestsellersData" method="execute">
+            <schedule>0 0 * * *</schedule>
+        </job>
+        <job name="sales_grid_order_async_insert" instance="Magento\Sales\Model\GridAsyncInsert" method="asyncInsert">
+            <schedule>* * * * *</schedule>
+        </job>
+    </group>
+</config>

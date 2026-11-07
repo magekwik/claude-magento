@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<config>
+    <group id="consumers">
+        <job name="consumers_runner" instance="Magento\MessageQueue\Model\Cron\ConsumersRunner" method="run">
+            <schedule>* * * * *</schedule>
+        </job>
+    </group>
+</config>
