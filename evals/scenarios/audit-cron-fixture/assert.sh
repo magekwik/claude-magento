@@ -11,6 +11,8 @@ py() { python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print($2)" "
 [ "$(py jobs.json "d['source']")" = "static" ] || { echo "fixture should be read statically"; exit 1; }
 [ "$(py history.json "d['source']")" = "csv" ] || { echo "history not used"; exit 1; }
 [ "$(py jobs.json "any(j['name']=='acme_feed_export' for j in d['jobs'])")" = "True" ] || { echo "custom job not inventoried"; exit 1; }
+[ "$(py jobs.json "[j.get('schedule') for j in d['jobs'] if j['name']=='acme_feed_stock_sync']")" = "['15 * * * *']" ] || { echo "multi-line job or its config.xml default schedule missed"; exit 1; }
+[ "$(py jobs.json "any(j['name']=='cron_test_job' for j in d['jobs'])")" = "False" ] || { echo "inventoried a test-fixture module not in config.php"; exit 1; }
 FIXED='consumers_runner indexer_clean_all_changelogs indexer_reindex_all_invalid indexer_update_all_views sales_grid_order_async_insert sales_grid_order_creditmemo_async_insert sales_grid_order_invoice_async_insert sales_grid_order_shipment_async_insert sales_send_order_creditmemo_emails sales_send_order_emails sales_send_order_invoice_emails sales_send_order_shipment_emails'
 for j in $FIXED; do
   [ "$(py proposal.json "'$j' in d.get('jobs',{})")" = "False" ] || { echo "proposal moves fixed job $j"; exit 1; }

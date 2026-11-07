@@ -5,5 +5,10 @@
             <schedule>*/30 * * * *</schedule>
         </job>
         <job name="acme_feed_cleanup" instance="Acme\Feed\Cron\Cleanup" method="execute"/>
+        <job instance="Acme\Feed\Cron\StockSync"
+             method="execute"
+             name="acme_feed_stock_sync">
+            <config_path>acme_feed/stock/schedule</config_path>
+        </job>
     </group>
 </config>

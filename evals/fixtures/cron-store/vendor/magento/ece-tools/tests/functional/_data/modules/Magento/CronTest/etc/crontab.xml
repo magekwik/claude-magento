@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<config>
+    <group id="default">
+        <job name="cron_test_job" instance="Magento\CronTest\Model\TestJob" method="execute">
+            <schedule>* * * * *</schedule>
+        </job>
+    </group>
+</config>

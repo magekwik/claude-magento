@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config>
+    <default>
+        <acme_feed>
+            <stock>
+                <schedule>15 * * * *</schedule>
+            </stock>
+        </acme_feed>
+    </default>
+</config>
