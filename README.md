@@ -74,7 +74,7 @@ Re-running only touches its own block. Delete the rules file's first line to tak
 
 Takes you from an empty folder, a git URL or an existing checkout to a running Magento Open Source or Mage-OS store on **Warden, DDEV, docker-magento or Valet**. It asks only what it cannot detect — where, from what (your repo, the latest Magento Open Source, or Mage-OS), which tool, and for a repo whether to install fresh or import a dump — and recommends a tool from what is already installed.
 
-Every choice and every generated credential lives in one git-ignored file, `.magento-local.env`, created up front with values you can edit before the step that uses them. When a step needs *you* — install a tool, run one `sudo` command, add Marketplace keys, drop a sanitised dump at `.magento-local/db.sql.gz` or a media archive at `.magento-local/media.tar.gz` — it stops, says exactly what to do, and re-running `/magekwik-magento:local-setup` resumes at that step.
+Every choice lives in one git-ignored file, `.magento-local.env`, created up front with values you can edit before the step that uses them. When a step needs *you* — install a tool, run one `sudo` command, add Marketplace keys, drop a sanitised dump at `.magento-local/db.sql.gz` or a media archive at `.magento-local/media.tar.gz` — it stops, says exactly what to do, and re-running `/magekwik-magento:local-setup` resumes at that step.
 
 | Step | Does |
 |---|---|
@@ -88,7 +88,7 @@ Every choice and every generated credential lives in one git-ignored file, `.mag
 | 8 Configure | developer mode, base URLs, 2FA off, no cron, reindex |
 | 9 Verify | a read-only agent checks services, database, search, storefront, admin and git-ignores → PASS/FAIL table |
 
-At the end it prints the store and admin URLs, the admin and database users, the CLI prefix, and where the passwords are. It never prints a password or the encryption key: commands read them from `.magento-local.env` when they run. `--status` shows progress; `--reset` starts again (it deletes only the ledger).
+The store uses local development logins (the same defaults Warden, DDEV and docker-magento ship with, editable in the ledger before the install); they work only on your machine. Magento generates its own encryption key, which the plugin never reads. At the end it prints the store and admin URLs, the logins and the CLI prefix. `--status` shows progress; `--reset` starts again (it deletes only the ledger).
 
 ### `/magekwik-magento:review [branch|PR] [--comment]` — a Magento-aware second reviewer
 
@@ -147,7 +147,7 @@ Thirteen eval scenarios (`evals/`) run against fixture projects; five of them fa
 ```
 claude --plugin-dir ./plugins/magento                                   # try in place
 claude plugin validate ./plugins/magento --strict && claude plugin validate .
-bash tests/run.sh                                                       # script unit tests
+bash tests/run.sh                                                       # repo tests (rules templates, plugin file types)
 bash evals/run.sh                                                       # eval scenarios (needs a logged-in claude)
 ```
 

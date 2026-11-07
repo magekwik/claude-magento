@@ -52,7 +52,7 @@ Requirements: Claude Code 2.1+, `git`, `bash`. Optional: `gh` (PR review), `vend
 
 Run it from the project root — the directory that contains `bin/magento`.
 
-**What it detects** (via a small bash script, so the result is the same every time):
+**What it detects** (Claude reads the project files directly; the plugin ships no scripts):
 
 - Edition and version from `composer.lock`; the host PHP version
 - Custom modules under `app/code` and themes under `app/design`, with each theme's parent
@@ -177,11 +177,11 @@ Sets up a running local Magento store, one step at a time, and remembers where i
 
 **What it asks.** Where to set up; from what — your git repository, the latest Magento Open Source (needs Marketplace keys) or Mage-OS (needs none); for a repository, whether to install fresh or import a sanitised dump; and which tool — Warden, DDEV, docker-magento or Valet, recommended from what is installed. Arguments answer the questions ahead of time.
 
-**The ledger.** Everything it decides and every credential it generates goes into `.magento-local.env` in the target folder — git-ignored (`.git/info/exclude` in a repository, so your committed `.gitignore` is never edited), readable only by you, and created before anything else so you can change a value before the step that uses it. Keep it: it is the only copy of the local passwords.
+**The ledger.** Everything it decides goes into `.magento-local.env` in the target folder — git-ignored (`.git/info/exclude` in a repository, so your committed `.gitignore` is never edited) and created before anything else so you can change a value before the step that uses it.
 
 **When it needs you, it stops.** Installing a tool, a `sudo` command (Warden's certificate, docker-magento's `/etc/hosts` line and TLS, `valet trust`), Marketplace keys, or a dump or media archive that is not there yet: the step is marked blocked, you get the exact commands, and re-running the command resumes at that step. It never runs `sudo` or a global installer itself, never asks you to paste keys into the chat, and never connects to a live store — real data only comes from a sanitised dump you place under `.magento-local/`.
 
-**Secrets stay out of the chat.** The hand-over shows URLs and user names and points to `.magento-local.env` for the passwords; commands read secrets from that file when they run, so they never appear in Claude's messages or commands.
+**No real credentials.** The database and admin logins are local development defaults (Warden's, DDEV's and docker-magento's own), not secrets — the store runs only on your machine; change them in the ledger before step 7 if you like. Magento generates the encryption key itself, and the plugin never reads it or your Composer keys.
 
 **Per tool:**
 
@@ -250,7 +250,7 @@ What it does not do yet: audit a live store's performance or SEO, inspect cron h
 - `/magekwik-magento:init` writes `CLAUDE.md` (one marked block) and `.claude/rules/magento.md`. Nothing else.
 - `/magekwik-magento:review` writes nothing. It runs `git`, and `vendor/bin/phpcs` if present; `gh` only when you give it a PR number; PR comments only with `--comment`.
 - `/magekwik-magento:local-setup` writes only inside the target directory — the chosen tool's environment files, the code, `.magento-local.env` and its git-ignore entries — plus the empty `~/.composer` and `~/.ssh` directories docker-magento mounts; Warden, DDEV and Valet keep their own global config. Its network use is downloading code, packages and images through `git`, Composer and the environment tool. It generates local-only credentials, never asks for or connects to a live store, and never runs `sudo` or a global installer for you.
-- No hooks, no MCP servers. `init` and `review` make no network calls of their own; `local-setup` only downloads, as above. No credentials are read or sent anywhere. Skills are Markdown; the eight bash scripts are unit-tested (including under macOS's bash 3.2) and shellcheck-clean.
+- No hooks, no MCP servers. `init` and `review` make no network calls of their own; `local-setup` only downloads, as above. No credentials are read or sent anywhere. The plugin is Markdown only: skills, commands, agents and the rules templates — no scripts.
 - Marker lines inside ``` fences in `CLAUDE.md` are ignored, so a fenced example of the markers is safe; an unbalanced fence can hide the live block.
 
 ---
