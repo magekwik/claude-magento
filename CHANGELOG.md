@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.4 — 2026-11-07
+
+### Changed
+- The plugin ships no scripts: the claude.ai directory accepts only Markdown, text, JSON, YAML and images from organizations it has not verified. The eight bash scripts are gone.
+- `/magekwik-magento:init` detects the project with Claude's own read-only tools (reading `app/etc/env.php` only for the `MAGE_MODE` line) and copies a pre-rendered rules file from `templates/` (Luma, Hyvä, or both). Output is unchanged.
+- `/magekwik-magento:local-setup` handles no secrets. The database and admin logins are the local development defaults Warden, DDEV and docker-magento ship with (editable in the ledger before the install), `setup:install` generates the encryption key, and the ledger is a plain settings file Claude writes itself. Ports, media import and the docker-magento template (now pinned to release 53.2.0) are done with ordinary commands. The verifier reads the ledger directly.
+
 ## 1.1.3 — 2026-11-07
 
 ### Changed
