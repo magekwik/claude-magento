@@ -21,7 +21,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y shellcheck
       - run: claude plugin validate ./plugins/magento --strict
       - run: claude plugin validate .
-      - run: shellcheck -x -P SCRIPTDIR -e SC2015 -e SC2016 plugins/magento/scripts/*.sh evals/run.sh tests/*.sh evals/scenarios/*/*.sh
+      - run: shellcheck -x -P SCRIPTDIR -e SC2015 -e SC2016 tools/*.sh evals/run.sh tests/*.sh evals/scenarios/*/*.sh
       - run: bash tests/run.sh
       - name: size limits
         run: |
