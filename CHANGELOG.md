@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.3 — 2026-11-07
+
+### Changed
+- `/magekwik-magento:local-setup` no longer checks for `auth.json` at all: it runs Composer, and when Composer answers 401 for `repo.magento.com` the step stops with the command for you to set your Marketplace keys. On DDEV that command writes them straight into the project's git-ignored `.ddev/homeadditions/.composer/` (no copy of your global file).
+- API docs show the token flow as plain HTTP requests with placeholders instead of shell pipelines that capture a token; the PHPCS reference describes the `Superglobal` sniff without listing the variables.
+
 ## 1.1.2 — 2026-10-25
 
 ### Changed
