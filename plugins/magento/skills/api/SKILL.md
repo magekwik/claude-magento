@@ -137,14 +137,20 @@ class BrandList implements BrandListInterface
 </config>
 ```
 
-Calling it with an admin token (2FA enabled, Google Authenticator; `TOKEN` is the JSON string the token endpoint returns):
+Calling it with an admin token (2FA enabled, Google Authenticator) — two requests; the first returns the token as a JSON string:
 
-```bash
-TOKEN=$(curl -s -X POST https://example.test/rest/V1/tfa/provider/google/authenticate \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"secret","otp":"123456"}' | tr -d '"')
-curl -s https://example.test/rest/V1/acme/brands -H "Authorization: Bearer $TOKEN"
-# ["Acme","Globex","Initech"]
+```http
+POST /rest/V1/tfa/provider/google/authenticate
+Content-Type: application/json
+
+{"username": "<admin user>", "password": "<admin password>", "otp": "<6-digit code>"}
+
+→ 200 "<token>"
+
+GET /rest/V1/acme/brands
+Authorization: Bearer <token>
+
+→ 200 ["Acme","Globex","Initech"]
 ```
 
 Without a token the same call returns 401 `{"message":"The consumer isn't authorized to access %resources.","parameters":{"resources":"Acme_Catalog::brands"}}`. On a development install with `Magento_TwoFactorAuth` disabled, `POST /rest/V1/integration/admin/token` with `{"username","password"}` returns the token directly.

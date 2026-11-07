@@ -187,11 +187,10 @@ curl -s https://example.test/graphql -H 'Content-Type: application/json' \
 # same query cacheable (GET, URL-encoded); look for X-Magento-Tags in the response headers
 curl -si 'https://example.test/graphql?query=%7B%20acmeBrands%20%7B%20items%20%7B%20name%20%7D%20%7D%20%7D'
 
-# mutation with a customer token
-TOKEN=$(curl -s https://example.test/graphql -H 'Content-Type: application/json' \
-  -d '{"query":"mutation { generateCustomerToken(email: \"jane@example.com\", password: \"secret\") { token } }"}' \
-  | php -r 'echo json_decode(stream_get_contents(STDIN))->data->generateCustomerToken->token;')
-curl -s https://example.test/graphql -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+# mutation with a customer token: generateCustomerToken returns {"data":{"generateCustomerToken":{"token":"<token>"}}}
+curl -s https://example.test/graphql -H 'Content-Type: application/json' \
+  -d '{"query":"mutation { generateCustomerToken(email: \"<email>\", password: \"<password>\") { token } }"}'
+curl -s https://example.test/graphql -H 'Content-Type: application/json' -H 'Authorization: Bearer <token>' \
   -d '{"query":"mutation($name: String!) { acmeCreateBrand(input: {name: $name}) { entity_id name } }","variables":{"name":"Initech"}}'
 ```
 
