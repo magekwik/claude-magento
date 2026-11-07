@@ -41,7 +41,7 @@ The review pipeline runs `claude plugin validate` plus automated safety screenin
 
 - Plugin name (slug): `magekwik-magento`
 - Display name: Magekwik Magento Toolkit
-- Description: Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magekwik-magento:init), Magento-aware code review (/magekwik-magento:review) and guided local environment setup (/magekwik-magento:local-setup).
+- Description: Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magekwik-magento:init), Magento-aware code review (/magekwik-magento:review), guided local environment setup (/magekwik-magento:local-setup) and a cron audit with a client-ready schedule report (/magekwik-magento:audit cron).
 - Category: development
 - Author: Magekwik — https://magekwik.com
 - Homepage / repository: https://github.com/magekwik/claude-magento (public)
@@ -57,7 +57,7 @@ The review pipeline runs `claude plugin validate` plus automated safety screenin
 - Components (v1.0.1, as submitted): 8 skills, 2 commands, 1 agent, 3 bash scripts. No hooks, no MCP servers, no network
   calls, no credentials. **From 1.1.1** `local-setup` adds 1 command, 1 agent and 5 scripts, downloads code, packages and
   images through `git`, Composer and the environment tool, and keeps its settings in a git-ignored
-  `.magento-local.env`; **from 1.1.3** it never looks for, reads or copies the user's Composer keys (Composer alone reads them; a missing key shows up as Composer's own 401). **From 1.1.4 the plugin ships no scripts** (Markdown, JSON and the icon only — the directory's file-type rule for non-Verified organizations): `init` detects and writes with Claude's own tools and copies a pre-rendered rules template; `local-setup` uses each tool's local development logins, lets Magento generate its encryption key, and handles no secrets — the listing's data-handling answers must say so (see README "What it touches").
+  `.magento-local.env`; **from 1.1.3** it never looks for, reads or copies the user's Composer keys (Composer alone reads them; a missing key shows up as Composer's own 401). **From 1.1.4 the plugin ships no scripts** (Markdown, JSON and the icon only — the directory's file-type rule for non-Verified organizations): `init` detects and writes with Claude's own tools and copies a pre-rendered rules template; `local-setup` uses each tool's local development logins, lets Magento generate its encryption key, and handles no secrets — the listing's data-handling answers must say so (see README "What it touches"). **From 1.2.0:** `/magekwik-magento:audit cron` writes only `var/cron-audit/`, reads the cron config files, `config:show` and the local `cron_schedule` table (the environment's own database command or a user export), changes nothing, makes no network calls and never connects to a live store.
 - What it writes: `CLAUDE.md` (marked block) and `.claude/rules/magento.md` on `/magekwik-magento:init`; PR comments only with `/magekwik-magento:review N --comment`; from 1.1, `/magekwik-magento:local-setup` writes inside
   its target directory only (plus empty `~/.composer` and `~/.ssh` for docker-magento).
 - Pre-submission check: `claude plugin validate ./plugins/magento --strict` → `✔ Validation passed`

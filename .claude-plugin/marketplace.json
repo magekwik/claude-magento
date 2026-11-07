@@ -10,7 +10,7 @@
     {
       "name": "magekwik-magento",
       "source": "./plugins/magento",
-      "description": "Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magekwik-magento:init), Magento-aware code review (/magekwik-magento:review) and guided local environment setup (/magekwik-magento:local-setup).",
+      "description": "Magento Open Source 2.4 development toolkit: framework conventions, module/data/API/frontend skills for Luma and Hyvä, project setup (/magekwik-magento:init), Magento-aware code review (/magekwik-magento:review), guided local environment setup (/magekwik-magento:local-setup) and a cron audit with a client-ready schedule report (/magekwik-magento:audit cron).",
       "category": "development",
       "author": {
         "name": "Magekwik",

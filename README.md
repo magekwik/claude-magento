@@ -6,7 +6,7 @@ This repository is a Claude Code **plugin marketplace** (`magekwik`) containing 
 
 | Plugin | What it does |
 |---|---|
-| [`magekwik-magento`](plugins/magento/) | Makes Claude Code a competent Magento Open Source 2.4 developer: eight knowledge skills, `/magekwik-magento:init` to set a project up, `/magekwik-magento:review` for Magento-aware code review, `/magekwik-magento:local-setup` for a working local store. |
+| [`magekwik-magento`](plugins/magento/) | Makes Claude Code a competent Magento Open Source 2.4 developer: eight knowledge skills, `/magekwik-magento:init` to set a project up, `/magekwik-magento:review` for Magento-aware code review, `/magekwik-magento:local-setup` for a working local store, `/magekwik-magento:audit cron` for a cron schedule audit. |
 
 **Supports:** Magento Open Source 2.4.4 – 2.4.9 · PHP 8.1 – 8.5 · Luma and Hyvä frontends. Adobe Commerce-only features are referenced, not covered in depth.
 
@@ -109,6 +109,10 @@ Verdict: 1 blocker(s), 0 major, 0 minor, 0 nit — not mergeable as is
 | `/magekwik-magento:review 42` | GitHub PR #42 |
 | `/magekwik-magento:review 42 --comment` | …and posts each finding as an inline PR comment |
 
+### `/magekwik-magento:audit cron` — a week of your cron schedule, worked out
+
+Reads every cron job from the store's `crontab.xml` files and config, takes run times from the local `cron_schedule` history, works out the week the way Magento's cron runner handles it, and writes a client-ready HTML report plus a developer summary with a proposed schedule that is checked as better before it is offered. Everything lands in `var/cron-audit/`; the store itself is never changed.
+
 ---
 
 ## What it looks for
@@ -132,6 +136,7 @@ Thirteen eval scenarios (`evals/`) run against fixture projects; five of them fa
 - `/magekwik-magento:init` writes `CLAUDE.md` (one marked block) and `.claude/rules/magento.md`. Nothing else.
 - `/magekwik-magento:review` writes nothing; it runs `git` and `vendor/bin/phpcs`, `gh` only with a PR number, and posts comments only with `--comment`.
 - `/magekwik-magento:local-setup` writes only inside the target directory — the chosen tool's environment files, the code, `.magento-local.env` and its git-ignore entries — plus the empty `~/.composer` and `~/.ssh` directories docker-magento mounts; Warden, DDEV and Valet keep their own global config. Its network use is downloading code, packages and images through `git`, Composer and the environment tool. It generates local-only credentials, never asks for or connects to a live store, and never runs `sudo` or a global installer for you.
+- `/magekwik-magento:audit cron` writes only `var/cron-audit/`. It reads the local store's cron config and `cron_schedule` table, changes nothing, makes no network calls, and never connects to a live store.
 - No hooks, no MCP servers. `init` and `review` make no network calls of their own; `local-setup` only downloads, as above. No credentials are read or sent anywhere.
 
 ---
@@ -156,7 +161,7 @@ CI runs manifest validation, shellcheck, the unit tests, size limits and a conte
 ## Roadmap
 
 - **1.1 — local setup** (shipped in 1.1.1): `/magekwik-magento:local-setup`, a guided, resumable local environment on Warden, DDEV, docker-magento or Valet.
-- **1.2 — audit suite:** `/magekwik-magento:audit` with performance, SEO, patch-detector and cron-inspector agents working from code and config.
+- **1.2 — audit suite:** `/magekwik-magento:audit`, working from code, config and cron history. **`cron`** is built: a client-ready calendar report and a checked, lower-load schedule. Performance, SEO and patch areas follow.
 - **2.0 — store operations:** an MCP server for live store data (cron, indexers, performance, reporting).
 
 ## Licence

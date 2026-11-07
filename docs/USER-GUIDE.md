@@ -8,6 +8,7 @@ The `magekwik-magento` plugin makes Claude Code a competent Magento Open Source 
 | **`/magekwik-magento:init`** | Sets a project up so Claude behaves consistently in it | Run once per project, re-run after big changes |
 | **`/magekwik-magento:review`** | A read-only Magento-aware code review of a diff, branch or PR | Run before you open a PR, or on someone else's |
 | **`/magekwik-magento:local-setup`** | A guided, resumable setup of a running local store | Run once per local copy; re-run to resume |
+| **`/magekwik-magento:audit cron`** | Works out a week of your cron schedule from its config and run history and writes a client-ready report with a proposed schedule | Run on a local copy; it never touches a live store |
 
 Supported: **Magento Open Source 2.4.4 – 2.4.9 · PHP 8.1 – 8.5 · Luma and Hyvä**. Adobe Commerce-only features are referenced, not covered in depth.
 
@@ -17,7 +18,7 @@ Supported: **Magento Open Source 2.4.4 – 2.4.9 · PHP 8.1 – 8.5 · Luma and 
 
 **Developers and agencies working on Magento 2** — the plugin is built for people writing modules, themes, APIs and deployment scripts. It gives Claude the framework's conventions (so it stops reaching for `ObjectManager`, raw SQL or `InstallSchema`), the version-specific facts (what changed in 2.4.9's cache backend, which PHP each release needs), and a reviewer that reads a diff the way a senior Magento engineer would.
 
-**Store owners and merchants** get the benefit indirectly today: better code from whoever works on the store, a review gate that catches the classic security and upgrade-breaking mistakes, and a repository that any developer (or Claude session) can pick up with the right context already in place. The plugin does not yet talk to a running store — see [Roadmap](#12-roadmap) for what is coming.
+**Store owners and merchants** get the benefit indirectly today: better code from whoever works on the store, a review gate that catches the classic security and upgrade-breaking mistakes, and a repository that any developer (or Claude session) can pick up with the right context already in place. The plugin does not yet talk to a running store — see [Roadmap](#13-roadmap) for what is coming.
 
 ---
 
@@ -196,7 +197,18 @@ Sets up a running local Magento store, one step at a time, and remembers where i
 
 ---
 
-## 7. Worked examples
+## 7. `/magekwik-magento:audit cron`
+
+Run it from the store's root: `/magekwik-magento:audit cron`. Claude reads every cron job (the `crontab.xml` files, plus `bin/magento config:show` overrides when the store runs), takes run times from the store's `cron_schedule` table, works out the week the way Magento's `cron:run` handles it, and writes two files to `var/cron-audit/`:
+
+- **`report.html`**, for the client: key figures, a week calendar of server load (Monday–Sunday × 24 hours), the proposed schedule on the same colour scale below it, findings in plain language and the full job table. It is one offline file; print it to PDF to send. `--brand "Your Agency"` and `--logo logo.svg` put your name and logo in the header.
+- **`summary.md`**, for the developer: the same findings and the exact changes (`crontab.xml`, `cron_groups.xml`, a small regroup plugin, `config:set`) to apply and deploy.
+
+A proposed schedule is kept only when it is no worse on peak load and worst wait and better on at least one figure or removes a self-overlap; otherwise none is offered. Jobs whose timing matters (order emails, grid inserts, indexers, the queue consumers) are never moved. Run times are measured where there is history and class estimates otherwise — and Magento keeps successful runs only 60 minutes by default, so the summary tells you how to keep a week (`history_success_lifetime`) and re-run for fully measured figures. The history comes from the environment's own database command (Warden, DDEV, docker-magento) or a CSV/TSV export you pass with `--history` (the command shows the query). Nothing in the store changes, and the audit never connects to a live store.
+
+---
+
+## 8. Worked examples
 
 These are the plugin's own evaluation scenarios — each is run against a fixture project before every release. Where a scenario "flipped" (failed without the plugin, passed with it), that is where the plugin adds the most.
 
@@ -220,7 +232,7 @@ both lines reported with exact numbers, a blocker on the SQL, S2 as major, and �
 
 ---
 
-## 8. What it does for developers
+## 9. What it does for developers
 
 - **Guardrails you do not have to remember.** The rulebook is loaded in every review and copied into every project; the mistakes that cost upgrades (core-table columns, install scripts, `vendor/` edits) and security (raw SQL, GET mutations, unescaped output) get caught before a PR.
 - **Version-accurate answers.** Facts are checked against the 2.4.9 source, not recalled: which cache type holds plugin lists (`compiled_config`), what `cache:flush` does on 2.4.9 versus 2.4.8, that cron groups are silently never scheduled without `cron_groups.xml`, that `setup:di:compile` in developer mode leaves you in compiled mode.
@@ -228,11 +240,11 @@ both lines reported with exact numbers, a blocker on the SQL, S2 as major, and �
 - **A second reviewer on every change**, including PRs from contractors — with file:line, the rule broken, why, and the fix, in a format you can post straight to GitHub.
 - **Faster onboarding.** A new developer (or a new Claude session) opens the repo and finds the module list, the theme stack, the CLI prefix and the conventions already written down.
 
-Honest limits: it is Markdown and bash, not a runtime. It does not execute your store, read your database, or know about extensions it has not seen in your `app/code`. On the simplest tasks — a plain observer, a plain layout handle — Claude was already competent; the plugin's lift is largest on the decisions that go wrong quietly (schema, caches, upgrades, security).
+Honest limits: it is Markdown, not a runtime. It does not execute your store (the cron audit reads the local store's config and `cron_schedule` table, never a live store's), or know about extensions it has not seen in your `app/code`. On the simplest tasks — a plain observer, a plain layout handle — Claude was already competent; the plugin's lift is largest on the decisions that go wrong quietly (schema, caches, upgrades, security).
 
 ---
 
-## 9. What it does for merchants and store owners
+## 10. What it does for merchants and store owners
 
 Today, indirectly but concretely:
 
@@ -241,21 +253,22 @@ Today, indirectly but concretely:
 - **Less dependence on one person's memory.** `init` documents the project — modules, theme, environment, conventions — in the repository itself.
 - **Plain answers to operational questions.** "Why is `setup:upgrade` slow?", "what does this patch release change?", "which caches do I clear after a config change?" — answered for *your* environment.
 
-What it does not do yet: audit a live store's performance or SEO, inspect cron history, or detect applied patches. Those are on the roadmap (below). Until then, treat it as a developer tool whose results you benefit from, not a merchant dashboard.
+What it does not do yet: audit a live store's performance or SEO, or detect applied patches. Those are on the roadmap (below). Until then, treat it as a developer tool whose results you benefit from, not a merchant dashboard.
 
 ---
 
-## 10. Safety and what it touches
+## 11. Safety and what it touches
 
 - `/magekwik-magento:init` writes `CLAUDE.md` (one marked block) and `.claude/rules/magento.md`. Nothing else.
 - `/magekwik-magento:review` writes nothing. It runs `git`, and `vendor/bin/phpcs` if present; `gh` only when you give it a PR number; PR comments only with `--comment`.
 - `/magekwik-magento:local-setup` writes only inside the target directory — the chosen tool's environment files, the code, `.magento-local.env` and its git-ignore entries — plus the empty `~/.composer` and `~/.ssh` directories docker-magento mounts; Warden, DDEV and Valet keep their own global config. Its network use is downloading code, packages and images through `git`, Composer and the environment tool. It generates local-only credentials, never asks for or connects to a live store, and never runs `sudo` or a global installer for you.
+- `/magekwik-magento:audit cron` writes only `var/cron-audit/` in the project. It reads the cron config files, `bin/magento config:show` and the local `cron_schedule` table (through the environment's own database command, or an export you give it); it changes nothing, makes no network calls and never connects to a live store.
 - No hooks, no MCP servers. `init` and `review` make no network calls of their own; `local-setup` only downloads, as above. No credentials are read or sent anywhere. The plugin is Markdown only: skills, commands, agents and the rules templates — no scripts.
 - Marker lines inside ``` fences in `CLAUDE.md` are ignored, so a fenced example of the markers is safe; an unbalanced fence can hide the live block.
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 | Symptom | Cause / fix |
 |---|---|
@@ -273,16 +286,16 @@ What it does not do yet: audit a live store's performance or SEO, inspect cron h
 
 ---
 
-## 12. Roadmap
+## 13. Roadmap
 
 - **1.0:** the eight skills, `/magekwik-magento:init`, `/magekwik-magento:review`, the reviewer agent, evals and CI.
-- **1.1 — local setup** (1.1.1, this release): `/magekwik-magento:local-setup`, a guided, resumable local environment on Warden, DDEV, docker-magento or Valet, for a new Magento Open Source / Mage-OS install or an existing repository.
-- **1.2 — audit suite:** `/magekwik-magento:audit` with performance, SEO, patch-detector and cron-inspector agents producing one report format, working from code and config (no live store access).
+- **1.1 — local setup** (1.1.1–1.1.4): `/magekwik-magento:local-setup`, a guided, resumable local environment on Warden, DDEV, docker-magento or Valet, for a new Magento Open Source / Mage-OS install or an existing repository.
+- **1.2 — audit suite** (1.2.0, this release): `/magekwik-magento:audit`, working from code, config and cron history (no live store access). The **cron** area ships first; performance, SEO and patch-detector areas follow, producing one report format.
 - **2.0 — store operations:** an MCP server for live data — cron schedule, indexers, real performance and reporting — so merchants can ask about the running store, not just the code.
 
 ---
 
-## 13. Versions and contributing
+## 14. Versions and contributing
 
 Releases are tagged `vX.Y.Z`; `/plugin marketplace update magekwik` installs the latest. Every release runs the structural checks (manifests, shellcheck, unit tests), the eval scenarios, and hands-on checks against a real store and a fresh 2.4.9 install — see `docs/release-checklist.md`.
 
