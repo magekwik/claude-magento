@@ -2,7 +2,7 @@
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-S="$ROOT/plugins/magento/scripts/render-rules.sh"
+S="$ROOT/tools/render-rules.sh"
 tmp=$(mktemp -d)
 
 bash "$S" --version 0.1.0 --hyva false --luma true > "$tmp/luma.md"

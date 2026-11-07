@@ -6,15 +6,22 @@ disable-model-invocation: true
 
 # /magekwik-magento:init
 
-Work from the project root (the directory containing `bin/magento`). Do the steps in order; never write anything before step 5.
+Work from the project root (the directory containing `bin/magento`). Do the steps in order; never write anything before step 5. The plugin ships no scripts: you detect and write with your own tools.
 
 ## 1. Detect
 
-Run: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/detect-project.sh" .`
+Work out FACTS with your own read-only tools (Glob, Grep, Read, and `test`/`ls`/`php -r` in Bash). Every path is relative to the project root. Never read `app/etc/env.php` whole — it holds the database password and encryption key; only Grep it for the one line below.
 
-- Exit code 2 → print its stderr line (`not a Magento root: …`) and stop. Nothing is written.
-- Any other non-zero exit → show stderr and stop.
-- Exit 0 → the stdout JSON is FACTS. Keys: `magento.edition` (`open-source|commerce|mage-os|unknown`), `magento.version`, `magento.base` (the Magento release the code tracks — equals `version` for Magento editions, Mage-OS's upstream Magento release for `mage-os`), `php`, `modules[]{name,path}`, `themes[]{area,name,path,parent}`, `hyva`, `env` (`warden|ddev|docker|docker-magento|native`), `tooling{phpcs,phpstan,phpunit}` (`phpcs` ✓ means `vendor/bin/phpcs` or a `phpcs.xml*` config is present), `mode`. `php` is the host CLI's version (may differ from the container's).
+- **Root check:** the project is Magento when `bin/magento` exists, or `composer.json` requires a `magento/` or `mage-os/` package. Otherwise print `not a Magento root: <path>` and stop. Nothing is written.
+- `magento.edition` and `magento.version` from `composer.lock` (absent → `unknown`, `null`): the first package found of `magento/product-enterprise-edition` → `commerce`, `magento/product-community-edition` → `open-source`, `mage-os/product-community-edition` → `mage-os`; `version` is that package's `"version"` (the line after its `"name"` line — use Grep with `-A 3`). None found → `unknown`, `null`.
+- `magento.base`: for `mage-os`, the `"magento_version"` inside that same package's entry (its `extra` object — Grep `-A 60` from the package's `"name"` line and take the first `magento_version` before the next package's `"name"`); `null` if absent. For the other editions, equal to `version`.
+- `php`: `php -r 'echo PHP_VERSION;'` on the host; `null` if `php` is missing. It may differ from the container's PHP.
+- `modules[]`: each `app/code/<Vendor>/<Module>/registration.php` (Glob); `name` is the first quoted `Vendor_Module` string in it, else `<Vendor>_<Module>` from the path; `path` is `app/code/<Vendor>/<Module>`.
+- `themes[]`: each `app/design/<area>/<Vendor>/<theme>/theme.xml`; `name` = `<Vendor>/<theme>`, `parent` = the text of its `<parent>` element (`null` if none).
+- `hyva`: true when `composer.lock` contains a `"name": "hyva-themes/…"` package or `app/code/Hyva/` exists.
+- `env`, first match wins: `warden` (`.warden/` exists, or `.env` has a line starting `WARDEN_ENV_TYPE=`) → `ddev` (`.ddev/` exists) → `docker-magento` (a `docker-compose*.yml`, `docker-compose*.yaml`, `compose*.yml` or `compose*.yaml` at the root and `bin/clinotty` exists) → `docker` (such a compose file only) → `native`.
+- `tooling`: `phpcs` when `vendor/bin/phpcs`, `phpcs.xml` or `phpcs.xml.dist` exists; `phpstan` when `phpstan.neon` or `phpstan.neon.dist` exists; `phpunit` when `dev/tests/unit/phpunit.xml` or `dev/tests/unit/phpunit.xml.dist` exists.
+- `mode`: Grep `app/etc/env.php` for `'MAGE_MODE'` only, and take the quoted word after `=>`; `null` if the file or line is missing.
 
 ## 2. Plugin version
 
@@ -31,7 +38,7 @@ Read `version` from `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. Call it 
 
 ## 4. Render the CLAUDE.md block
 
-Create the temp directory: `mkdir -p .magento-init-tmp` under the project root (a hidden folder at the project root — not under `.claude/`, which tools may not write to, and inside the project so a sandboxed session can always remove it). Write this to `.magento-init-tmp/block.md`, substituting values. Keep the markers as the first and last lines. Where a value is `null`, write `unknown`.
+Compose BLOCK — the text below with values substituted, the markers as its first and last lines. Where a value is `null`, write `unknown`.
 
 ```
 <!-- magento:begin -->
@@ -51,18 +58,26 @@ Create the temp directory: `mkdir -p .magento-init-tmp` under the project root (
 <!-- magento:end -->
 ```
 
-## 5. Render the rules file and apply
+## 5. Write CLAUDE.md
 
-```
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/render-rules.sh" --version VERSION --hyva HYVA --luma LUMA > .magento-init-tmp/rules.md
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/apply-init.sh" --block .magento-init-tmp/block.md --rules .magento-init-tmp/rules.md --root .
-```
+A marker line counts only when it is the whole line and sits outside a fenced code block (a ```` ``` ```` fence) — an example of the markers inside a fence is never the real block.
 
-Once apply-init.sh has exited successfully, remove the temp directory: `rm -rf .magento-init-tmp`.
+- No `CLAUDE.md` → create it containing BLOCK. RESULT: `CLAUDE.md: created`.
+- It has a `<!-- magento:begin -->` line followed later by a `<!-- magento:end -->` line, both counting → replace everything from that begin line through that end line with BLOCK (Edit tool, the old text copied exactly from the file); everything outside stays byte for byte. RESULT: `CLAUDE.md: updated`.
+- Otherwise → append a blank line and BLOCK at the end, leaving the rest untouched. RESULT: `CLAUDE.md: appended`.
 
-## 6. Report
+After writing, the file must hold exactly one counting begin marker and one end marker.
 
-Print the two summary lines from `apply-init.sh` verbatim, then:
-- if the rules file was "left alone (owned by you)": one sentence saying the header line was removed so it is now user-owned, and how to regenerate (delete the file and rerun).
-- if the temp directory could not be removed, say so.
+## 6. Write the rules file
+
+The rendered conventions ship with the plugin: TEMPLATE is `${CLAUDE_PLUGIN_ROOT}/templates/rules-luma.md` when HYVA is `false`, `rules-hyva.md` when LUMA is `false`, else `rules-hyva-luma.md`.
+
+- No `.claude/rules/magento.md` → `mkdir -p .claude/rules && cp "<TEMPLATE>" .claude/rules/magento.md`. RESULT2: `.claude/rules/magento.md: created`.
+- Its first line starts with `<!-- generated by the magento plugin` → the same `cp` over it. RESULT2: `.claude/rules/magento.md: updated`.
+- Otherwise the user has taken it over → leave it. RESULT2: `.claude/rules/magento.md: left alone (owned by you)`.
+
+## 7. Report
+
+Print RESULT and RESULT2, one per line, then:
+- if the rules file was left alone: one sentence saying the header line was removed so it is now user-owned, and how to regenerate (delete the file and rerun).
 - one line: "Review `CLAUDE.md` and commit both files."
